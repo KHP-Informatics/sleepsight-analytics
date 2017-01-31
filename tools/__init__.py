@@ -1,2 +1,3 @@
 from tools.participant import Participant
-__all__ = ['participant']
+from tools.vis import QuickPlot
+__all__ = ['participant', 'vis']

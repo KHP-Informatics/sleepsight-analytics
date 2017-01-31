@@ -6,9 +6,11 @@ from analysis import Periodicity
 # Overarching SleepSight pipeline script
 
 #ISS03 - confirm Kalman imputation
+#ISS06 - remove timestamp from p.passiveSensors
+#ISS07 - autocorrelation x label
 
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
-p = Participant(id=5, path=path)
+p = Participant(id=1, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.load()
 print(p)
@@ -27,7 +29,6 @@ if not p.isPipelineTaskCompleted('missingness'):
     p.saveSnapshot()
 else:
     print('\nSkipping MISSINGNESS - already completed.')
-
 
 # Task: 'imputation' (Kalman smoothing)
 if p.isPipelineTaskCompleted('imputation'):
@@ -49,12 +50,14 @@ else:
 if not p.isPipelineTaskCompleted('periodicity'):
     print('\nContinuing with PERIODICITY...')
     for pSensor in p.passiveSensors:
-        pdy = Periodicity()
-        pdy.addObservtions(p.getPassiveDataColumn(pSensor))
-        pdy.serial_corr()
-        pdy.auto_corr()
-        pdy.pearson_corr()
-        pdy.plot('scf')
-        break
+        if pSensor not in 'timestamp':
+            pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=path)
+            pdy.addObservtions(p.getPassiveDataColumn(pSensor))
+            pdy.serial_corr(nSteps=100)
+            pdy.auto_corr()
+            pdy.pearson_corr()
+            pdy.plot('scf', show=False, save=True)
+            pdy.plot('acf', show=False, save=True)
+            pdy.plot('pcf', show=False, save=True)
 else:
     print('\nSkipping PERIODICITY - already completed.')
