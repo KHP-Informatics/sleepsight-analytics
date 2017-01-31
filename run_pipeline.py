@@ -1,6 +1,8 @@
 # !/usr/bin/python3
 
 from preprocessing import Participant, KalmanImputation, MissingnessDT
+from analysis import Periodicity
+
 # Overarching SleepSight pipeline script
 
 #ISS03 - confirm Kalman imputation
@@ -28,7 +30,7 @@ else:
 
 
 # Task: 'imputation' (Kalman smoothing)
-if not p.isPipelineTaskCompleted('imputation'):
+if p.isPipelineTaskCompleted('imputation'):
     print('\nContinuing with IMPUTATION...')
     for pSensor in p.passiveSensors:
         ki = KalmanImputation()
@@ -43,4 +45,16 @@ else:
     print('\nSkipping IMPUTATION - already completed.')
 
 
-
+# Task 'periodicity' (Determining time window of repating sequences)
+if not p.isPipelineTaskCompleted('periodicity'):
+    print('\nContinuing with PERIODICITY...')
+    for pSensor in p.passiveSensors:
+        pdy = Periodicity()
+        pdy.addObservtions(p.getPassiveDataColumn(pSensor))
+        pdy.serial_corr()
+        pdy.auto_corr()
+        pdy.pearson_corr()
+        pdy.plot('scf')
+        break
+else:
+    print('\nSkipping PERIODICITY - already completed.')
