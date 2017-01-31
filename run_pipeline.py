@@ -1,6 +1,6 @@
 # !/usr/bin/python3
-
-from preprocessing import Participant, KalmanImputation, MissingnessDT
+from tools import Participant
+from preprocessing import KalmanImputation, MissingnessDT
 from analysis import Periodicity
 
 # Overarching SleepSight pipeline script
