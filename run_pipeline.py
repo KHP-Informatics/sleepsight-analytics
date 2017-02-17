@@ -5,14 +5,17 @@ from analysis import Periodicity
 
 # Overarching SleepSight pipeline script
 
-#ISS03 - confirm Kalman imputation
 #ISS06 - remove timestamp from p.passiveSensors
-#ISS07 - autocorrelation x label
+
 
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
-p = Participant(id=1, path=path)
+plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
+p = Participant(id=6, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.load()
+print(p.activeData)
+exit()
+
 print(p)
 
 print('\nBegin analysis pipeline:')
@@ -26,22 +29,23 @@ if not p.isPipelineTaskCompleted('missingness'):
     print(mdt)
     p.missingness = mdt.missingness
     p.updatePipelineStatusForTask('missingness')
-    p.saveSnapshot()
+    p.saveSnapshot(path)
 else:
     print('\nSkipping MISSINGNESS - already completed.')
 
 # Task: 'imputation' (Kalman smoothing)
-if p.isPipelineTaskCompleted('imputation'):
+if not p.isPipelineTaskCompleted('imputation'):
     print('\nContinuing with IMPUTATION...')
     for pSensor in p.passiveSensors:
-        ki = KalmanImputation()
-        ki.addObservtions(p.getPassiveDataColumn(pSensor))
-        ki.fit(n_iterations=10)
-        ki.smooth()
-        ki.limitToPositiveVals()
-        p.setPassiveDataColumn(ki.imputedObservations, col=pSensor)
+        if pSensor not in 'timestamp':
+            ki = KalmanImputation()
+            ki.addObservtions(p.getPassiveDataColumn(pSensor))
+            ki.fit(n_iterations=10)
+            ki.smooth()
+            ki.limitToPositiveVals()
+            p.setPassiveDataColumn(ki.imputedObservations, col=pSensor)
     p.updatePipelineStatusForTask('imputation')
-    p.saveSnapshot()
+    p.saveSnapshot(path)
 else:
     print('\nSkipping IMPUTATION - already completed.')
 
@@ -49,15 +53,28 @@ else:
 # Task 'periodicity' (Determining time window of repating sequences)
 if not p.isPipelineTaskCompleted('periodicity'):
     print('\nContinuing with PERIODICITY...')
+    periodicity = {}
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
-            pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=path)
+            pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
             pdy.addObservtions(p.getPassiveDataColumn(pSensor))
             pdy.serial_corr(nSteps=100)
             pdy.auto_corr()
             pdy.pearson_corr()
-            pdy.plot('scf', show=False, save=True)
-            pdy.plot('acf', show=False, save=True)
-            pdy.plot('pcf', show=False, save=True)
+            pdy.plot('all', show=False, save=True)
+            periodicity[pSensor] = pdy.periodicity
+    p.periodicity = periodicity
+    p.updatePipelineStatusForTask('periodicity')
+    p.saveSnapshot(path)
 else:
     print('\nSkipping PERIODICITY - already completed.')
+
+# Task 'gp-model gen' (Determining time window of repating sequences)
+if not p.isPipelineTaskCompleted('GP model gen.'):
+    print('\nContinuing with GP-MODEL GEN...')
+
+
+
+
+else:
+    print('\nSkipping GP-MODEL GEN - already completed.')

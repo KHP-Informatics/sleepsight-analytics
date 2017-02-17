@@ -8,6 +8,15 @@ from tools import QuickPlot
 
 class Periodicity:
 
+    @property
+    def periodicity(self):
+        periodicity = {
+            'scf': self.scf,
+            'acf': self.acf,
+            'pcf': self.pcf
+        }
+        return periodicity
+
     def __init__(self, identifier='SleepSight', sensorName='Sensor name', path='/'):
         self.observations = []
         self.sensorName = sensorName
@@ -35,7 +44,16 @@ class Periodicity:
 
     # auto-correlation function
     def auto_corr(self):
-        self.acf = np.correlate(self.observations, self.observations, mode='same')
+        acf_full =  np.correlate(self.observations, self.observations, mode='full')
+        # 2nd half
+        N = len(acf_full)
+        acf_half = acf_full[N // 2: (N // 2 + 20160)]
+        # standardise
+        lengths = range((N // 2 + 20160), N // 2, -1)
+        acf_stand = acf_half / lengths
+        # normalise
+        acf_norm = acf_stand / acf_stand[0]
+        self.acf = acf_norm
 
     # pearson's correlation matrix
     def pearson_corr(self, lag=1440):
@@ -63,9 +81,12 @@ class Periodicity:
         qp.singlePlotOfTypeLine(self.scf, title=title, text=text, lineLabels=['SCF'], show=show, saveFigure=save)
 
     def plotAcf(self, show=True, save=True):
+        nDays = (len(self.acf) // 1440) + 1
+        ticks = np.arange(0, 1440*nDays, 1440)
+        tickLabels = np.arange(0,nDays)
         title = 'Auto-correlation: {}'.format(self.sensorName)
         qp = QuickPlot(path=self.path, identifier=self.id)
-        qp.singlePlotOfTypeLine(self.acf, title=title, lineLabels=['ACF'], show=show, saveFigure=save)
+        qp.singlePlotOfTypeLine(self.acf, title=title, lineLabels=['ACF'], ticks=ticks, tickLabels=tickLabels, show=show, saveFigure=save)
 
     def plotPcf(self, show=True, save=True):
         title = 'Pearson\'s correlation matrix: {}'.format(self.sensorName)

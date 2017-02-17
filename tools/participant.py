@@ -50,6 +50,14 @@ class Participant:
     def missingness(self, m):
         self.__missingness = m
 
+    @property
+    def periodicity(self):
+        return self.__periodicity
+
+    @periodicity.setter
+    def periodicity(self, p):
+        self.__periodicity = p
+
     def __init__(self, id, path=''):
         self.id = self.formatID(id)
         self.path = path
@@ -61,8 +69,8 @@ class Participant:
             'imputation': False,
             'periodicity': False,
             'GP model gen.': False,
-            'Anomaly detect.': False,
-            'Association': False
+            'anomaly detect.': False,
+            'association': False
         }
 
 
@@ -77,8 +85,12 @@ class Participant:
         files = os.listdir(self.path)
         filtered_files = [file for file in files if self.id in file]
         (activeSensFiles, passiveSensFiles) = self.splitFilesIntoActiveAndPassive(filtered_files)
-        self.loadPassiveData(passiveSensFiles)
-        self.loadActiveData(activeSensFiles)
+        if not self.containsParticipantObj(passiveSensFiles):
+            self.loadPassiveData(passiveSensFiles)
+            self.loadActiveData(activeSensFiles)
+            self.saveSnapshot()
+        else:
+            self.loadSnapshot()
 
     def splitFilesIntoActiveAndPassive(self, files):
         active = []
@@ -91,22 +103,14 @@ class Participant:
         return (active, passive)
 
     def loadPassiveData(self, filenames):
-        if not self.containsParticipantObj(filenames):
-            print('[Participant] No existing x_Participant.pkl file was found. ' +
-                  'A merged LookUpTable is genereated from found source files.\n' +
-                  '       [NOTE] Depending on the size of your datset this may take ' +
-                  'several minutes to hours.')
-            pTable = self.generatePassiveDataTable(filenames)
-            self.updatePipelineStatusForTask('passive data')
-            self.passiveData = self.transformTableIntoNumpyArray(pTable)
-            self.updatePipelineStatusForTask('merging data')
-            self.saveSnapshot()
-        else:
-            self.loadSnapshot()
-
-    def loadActiveData(self, filenames):
-        #self.updatePipelineStatusForTask('active data')
-        pass
+        print('[Participant] No existing x_Participant.pkl file was found. ' +
+              'A merged LookUpTable is genereated from found source files.\n' +
+              '       [NOTE] Depending on the size of your datset this may take ' +
+              'several minutes to hours.')
+        pTable = self.generatePassiveDataTable(filenames)
+        self.updatePipelineStatusForTask('passive data')
+        self.passiveData = self.transformTableIntoNumpyArray(pTable)
+        self.updatePipelineStatusForTask('merging data')
 
     def containsParticipantObj(self, filenames):
         for filename in filenames:
@@ -173,6 +177,100 @@ class Participant:
         pd_ts = pd.DataFrame(ts, columns=col_names)
         return pd_ts
 
+    def loadActiveData(self, filenames):
+        if '{}_symptoms_diary_tabluar.csv'.format(self.id) in filenames:
+            self.loadActiveDataSymptoms()
+            self.updatePipelineStatusForTask('active data')
+        else:
+            print('[WARN] No {}_symptoms_diary_tabluar.csv was found. Please load active data manually.'.format(self.id))
+
+    def loadActiveDataSymptoms(self):
+        file_path = self.path + '{}_symptoms_diary_tabluar.csv'.format(self.id)
+        input_data = np.genfromtxt(file_path, delimiter=',', dtype="U")
+        data = self.formatSymptomsData(input_data)
+        self.activeData = self.scoreSymptomsData(data)
+
+    def formatSymptomsData(self, input_data):
+        cols = self.formatRawSymptomsCols(input_data[0])
+        data = pd.DataFrame(input_data[1:], columns=cols)
+        data['timestamp'] = self.formatTimestampToDateTime(data['timestamp'])
+        for i in range(1, len(cols)):
+            data[cols[i]] = pd.to_numeric(data[cols[i]], downcast='signed', errors='coerce')
+        data.sort_values(by=['timestamp'], ascending=True, inplace=True)
+        cols = list(data.columns.values)
+        cols_sorted = np.concatenate((['timestamp'], sorted(cols[1:])))
+        data = data[cols_sorted]
+        return data
+
+    def formatRawSymptomsCols(self, s_cols):
+        def formatRawNames(col):
+            c = col[44:50]
+            c = c.split('_')[0]
+            return c
+        cols = [formatRawNames(col) for col in s_cols]
+        cols[0] = 'timestamp'
+        return cols
+
+    def formatTimestampToDateTime(self, arr):
+        def toDateTime(val):
+            v = val.split('.')[0]
+            return datetime.datetime.fromtimestamp(int(v)).strftime('%Y-%m-%d %H:%M')
+        a = [toDateTime(val) for val in arr]
+        return a
+
+    def scoreSymptomsData(self, data):
+        cols = ['datetime', 'hopelessness', 'depression', 'auditory halucination', 'visual halucination',
+                'anxiety', 'grandiosity', 'suspiciousness', 'total']
+        q1_data = data.filter(regex="q1")
+        q2_data = data.filter(regex="q2")
+        q3_data = data.filter(regex="q3")
+        q3a_data = q3_data[["q3i", "q3ia", "q3ib", "q3ic"]]
+        q3b_data = q3_data[["q3ii", "q3iia", "q3iib", "q3iic"]]
+        q4_data = data.filter(regex="q4")
+        q5_data = data.filter(regex="q5")
+        q6_data = data.filter(regex="q6")
+
+        q_data = [q1_data, q2_data, q3a_data, q3b_data, q4_data, q5_data, q6_data]
+
+        scores = [data['timestamp'].values.tolist()]
+        for j in range(len(q_data)):
+            row_means = []
+            for i in range(len(data)):
+                row_val = q_data[j][i:(i+1)].values.tolist()[0]
+                if j == 5:
+                    row_v_f = self.formatSymptomsRowScores(row_val, exception_grandiosity=True)
+                else:
+                    row_v_f = self.formatSymptomsRowScores(row_val)
+                row_mean = np.mean(row_v_f)
+                row_means.append(row_mean)
+            scores.append(row_means)
+
+        pd_s = pd.DataFrame(scores).T
+        pd_s[8] = pd_s[[1,2,3,4,5,6]].sum(axis=1)
+        pd_s.columns = cols
+        return pd_s
+
+
+    def formatSymptomsRowScores(self, val, exception_grandiosity=False):
+        v = []
+        for i in range(len(val)):
+            if val[i] == 0:
+                v.append(1)
+            elif val[i] == -1:
+                pass
+            elif exception_grandiosity and val[i] < 5:
+                v.append(1)
+            elif exception_grandiosity and val[i] == 5:
+                v.append(2)
+            elif exception_grandiosity and val[i] == 6:
+                v.append(3)
+            elif exception_grandiosity and val[i] == 7:
+                v.append(4)
+            else:
+                v.append(val[i])
+        return v
+
+
     def getPassiveDataColumn(self, col=''):
         if col is '':
             print('[ERR] Supply one of your column names.\n      Choose from {}.'.format(str(self.passiveCols)))
@@ -200,7 +298,9 @@ class Participant:
             print('[ERR] Requested task <{}> is unknown.'.format(taskName))
             exit()
 
-    def saveSnapshot(self):
+    def saveSnapshot(self, path=''):
+        if path not in '':
+            self.path = path
         output_filen = self.path + self.id + "_participant.pkl"
         with open(output_filen, 'wb') as output:
             pickle._dump(self.__dict__, output, pickle.HIGHEST_PROTOCOL)

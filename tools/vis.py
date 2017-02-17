@@ -12,18 +12,26 @@ class QuickPlot:
         self.identifier = identifier
         self.colours = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 
-    def singlePlotOfTypeLine(self, observation, title='Title', lineLabels=['Label'],
+    def singlePlotOfTypeLine(self, observation, title='Title', lineLabels=['Label'], ticks=[], tickLabels=[],
                        text='', matrix=False, show=True, saveFigure=False, figsize=(9, 6)):
         plt.close('all')
         plt.style.use('ggplot')
         fig, ax = plt.subplots(figsize=figsize)
-        self.plot_line(ax, observation, title=title, lineLabels=lineLabels, matrix=matrix)
+        self.plot_line(ax, observation, lineLabels=lineLabels, matrix=matrix)
 
         if text not in '':
-            ax.text(0, max(observation)+0.005, text,
+            ax.text(0, max(observation), text,
                     verticalalignment='bottom', horizontalalignment='left',
                     color='black', fontsize=8)
-
+        ax.set_ylabel('Correlation')
+        if len(ticks) > 0:
+            plt.xticks(ticks)
+            ax.xaxis.set_ticklabels(tickLabels)
+            ax.set_xlabel('Lag (in Days)')
+        else:
+            ax.set_xlabel('Lag (in Minutes)')
+        ax.set_title(title, fontsize=10)
+        ax.legend(loc='upper right', fontsize=8)
         plt.tight_layout()
         if saveFigure:
             path = self.outputPath + '{}_line_{}.png'.format(self.identifier, title)
@@ -31,7 +39,7 @@ class QuickPlot:
         if show:
             plt.show()
 
-    def plot_line(self, ax, line_data, matrix=False, title='Title', lineLabels=['Label'], fontsize=10):
+    def plot_line(self, ax, line_data, matrix=False,lineLabels=['Label']):
         N = int(len(list(line_data)))
         if matrix:
             linesN = len(line_data)
@@ -39,10 +47,6 @@ class QuickPlot:
                 ax.plot(np.arange(N), line_data[i], color=self.colours[i%linesN], label=lineLabels[0])
         else:
             ax.plot(np.arange(N), line_data, color='b', label=lineLabels[0])
-        ax.set_ylabel('Correlation')
-        ax.set_xlabel('Lag (in Minutes)')
-        ax.set_title(title, fontsize=fontsize)
-        ax.legend(loc='upper right', fontsize=8)
 
     def singlePlotOfTypeHeatmap(self, heatmap_data, title='Title', show=True, saveFigure=False, figsize=(9, 6)):
 
