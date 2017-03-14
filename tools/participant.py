@@ -1,5 +1,6 @@
 # !/bin/python3
 import os
+import json
 import numpy as np
 import pandas as pd
 import datetime
@@ -72,6 +73,7 @@ class Participant:
             'anomaly detect.': False,
             'association': False
         }
+        self.info = dict()
 
 
     def formatID(self, id_int):
@@ -99,7 +101,9 @@ class Participant:
             if self.activeSensingFilenameSelector in file:
                 active.append(file)
             else:
-                passive.append(file)
+                #reserved for meta data
+                if 'meta' not in file:
+                    passive.append(file)
         return (active, passive)
 
     def loadPassiveData(self, filenames):
@@ -270,6 +274,17 @@ class Participant:
                 v.append(val[i])
         return v
 
+    def loadMetaData(self, filename, selector=''):
+        if selector == '':
+            selector = self.id
+        path = self.path + filename
+        print(path)
+        with open(path) as data_file:
+            data = json.load(data_file)
+        self.info = data[selector]
+        self.saveSnapshot()
+
+
 
     def getPassiveDataColumn(self, col=''):
         if col is '':
@@ -312,8 +327,25 @@ class Participant:
         self.__dict__.update(tmp_dict)
 
     def __str__(self):
-        return '\nClass {} loads all relevant sensor data, formats and cashes it according to the state of ' \
-               'the pipeline.\n\nCurrent Pipeline Status of Participant {}:\n\n' \
+        classInfo = '\nClass {} loads all relevant sensor data, formats and cashes it according to the state of ' \
+               'the pipeline.\n\n'
+        participantInfo = ''
+        if len(self.info) > 0:
+            participantInfo += 'Participant Info:\n' \
+                              '   ID:               {}\n' \
+                              '   Age:              {} years\n' \
+                              '   Gender:           {}\n'\
+                              '   Start date:       {}\n' \
+                              '   Illness duration: {} years\n' \
+                              '   PANSS score:      {}\n' \
+                              '   Medication:       {}\n\n'.format(self.info['id'],
+                                                                   self.info['age'],
+                                                                   self.info['gender'],
+                                                                   self.info['startDate'],
+                                                                   self.info['durationIllness'],
+                                                                   self.info['PANSS']['total'],
+                                                                   str(self.info['medication']))
+        pipelineInfo = 'Current Pipeline Status of Participant {}:\n\n' \
                '>> passive data[{}] & active data[{}]\n    |\n>> merging[{}] --------|\n    |                    |' \
                '\n>> imputation[{}]    missingness[{}]\n    |\n>> periodicity[{}]\n    |\n>> GP model gen.[{}]\n' \
                '    |\n>> Anomaly detect.[{}]'.format(type(self), self.id,
@@ -327,3 +359,5 @@ class Participant:
                                                     self.pipelineStatus['Anomaly detect.'],
                                                     self.pipelineStatus['Association']
                                                 )
+        rendered = classInfo + participantInfo + pipelineInfo
+        return rendered

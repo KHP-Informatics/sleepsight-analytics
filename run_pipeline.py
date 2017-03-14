@@ -10,10 +10,10 @@ from analysis import Periodicity
 
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
-p = Participant(id=6, path=path)
+p = Participant(id=1, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.load()
-print(p.activeData)
+print(p)
 exit()
 
 print(p)
