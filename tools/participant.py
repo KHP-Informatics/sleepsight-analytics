@@ -20,6 +20,14 @@ class Participant:
         self.__activeSensingFilenameSelector = selector
 
     @property
+    def metaDataFileName(self):
+        return self.__metaDataFileName
+
+    @metaDataFileName.setter
+    def metaDataFileName(self, filename):
+        self.__metaDataFileName = filename
+
+    @property
     def passiveData(self):
         return self.__passiveData
 
@@ -65,6 +73,7 @@ class Participant:
         self.pipelineStatus = {
             'active data': False,
             'passive data': False,
+            'trim data': False,
             'merging data': False,
             'missingness': False,
             'imputation': False,
@@ -73,6 +82,7 @@ class Participant:
             'anomaly detect.': False,
             'association': False
         }
+        self.metaDataFileName = ''
         self.info = dict()
 
 
@@ -90,6 +100,8 @@ class Participant:
         if not self.containsParticipantObj(passiveSensFiles):
             self.loadPassiveData(passiveSensFiles)
             self.loadActiveData(activeSensFiles)
+            if self.metaDataFileName is not '':
+                self.loadMetaData(self.metaDataFileName)
             self.saveSnapshot()
         else:
             self.loadSnapshot()
@@ -282,8 +294,39 @@ class Participant:
         with open(path) as data_file:
             data = json.load(data_file)
         self.info = data[selector]
-        self.saveSnapshot()
 
+    def trimData(self, startDate, endDate='', duration=0):
+        start, end = self.determineStartAndEndDates(startDate, endDate, duration)
+        trimmedPassiveIdx = self.getTrimmedPassiveIndecies(start, end)
+        self.passiveData = self.passiveData.drop(self.passiveData.index[trimmedPassiveIdx])
+        trimmedActiveIdx = self.getTrimmedActiveIndecies(start, end)
+        self.activeData = self.activeData.drop(self.activeData.index[trimmedActiveIdx])
+
+    def determineStartAndEndDates(self, startDate, endDate='', duration=0):
+        start = datetime.datetime.strptime(startDate, '%d/%m/%Y')
+        if len(endDate) > 0:
+            end = datetime.datetime.strptime(endDate, '%d/%m/%Y')
+        elif duration > 0:
+            end = start + datetime.timedelta(days=(duration + 1))
+        else:
+            end = datetime.datetime.strptime(self.passiveData['timestamp'][len(self.passiveData['timestamp'])-1], '%Y-%m-%d %H:%M')
+        return (start, end)
+
+    def getTrimmedPassiveIndecies(self, start, end):
+        idxs = []
+        for i in range(0, len(self.passiveData)):
+            dateOfInterest = datetime.datetime.strptime(self.passiveData['timestamp'][i], '%Y-%m-%d %H:%M')
+            if dateOfInterest < start or end < dateOfInterest:
+                idxs.append(i)
+        return idxs
+
+    def getTrimmedActiveIndecies(self, start, end):
+        idxs = []
+        for i in range(0, len(self.activeData)):
+            dateOfInterest = datetime.datetime.strptime(self.activeData['datetime'][i], '%Y-%m-%d %H:%M')
+            if dateOfInterest < start or end < dateOfInterest:
+                idxs.append(i)
+        return idxs
 
 
     def getPassiveDataColumn(self, col=''):
@@ -346,11 +389,13 @@ class Participant:
                                                                    self.info['PANSS']['total'],
                                                                    str(self.info['medication']))
         pipelineInfo = 'Current Pipeline Status of Participant {}:\n\n' \
-               '>> passive data[{}] & active data[{}]\n    |\n>> merging[{}] --------|\n    |                    |' \
+               '>> passive data[{}] & active data[{}]\n    |\n>> trim[{}]\n    |\n' \
+               '>> merging[{}] --------|\n    |                    |' \
                '\n>> imputation[{}]    missingness[{}]\n    |\n>> periodicity[{}]\n    |\n>> GP model gen.[{}]\n' \
                '    |\n>> Anomaly detect.[{}]'.format(type(self), self.id,
                                                     self.pipelineStatus['passive data'],
                                                     self.pipelineStatus['active data'],
+                                                    self.pipelineStatus['trim data'],
                                                     self.pipelineStatus['merging data'],
                                                     self.pipelineStatus['imputation'],
                                                     self.pipelineStatus['missingness'],

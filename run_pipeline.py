@@ -10,15 +10,22 @@ from analysis import Periodicity
 
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
-p = Participant(id=1, path=path)
+p = Participant(id=10, path=path)
 p.activeSensingFilenameSelector = 'diary'
+p.metaDataFileName = 'meta_patients.json'
 p.load()
-print(p)
-exit()
-
-print(p)
 
 print('\nBegin analysis pipeline:')
+
+# Task: 'trim data' to Study Duration
+if not p.isPipelineTaskCompleted('trim data'):
+    print('\nContinuing with TRIM DATA...')
+    p.trimData(p.info['startDate'], duration=56)
+    p.updatePipelineStatusForTask('trim data')
+    p.saveSnapshot(path)
+else:
+    print('\nSkipping TRIM DATA - already completed.')
+
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):
     print('\nContinuing with MISSINGNESS computation...')
@@ -69,12 +76,9 @@ if not p.isPipelineTaskCompleted('periodicity'):
 else:
     print('\nSkipping PERIODICITY - already completed.')
 
-# Task 'gp-model gen' (Determining time window of repating sequences)
+# Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
     print('\nContinuing with GP-MODEL GEN...')
-
-
-
-
+    # CONTINUE HERE!!
 else:
     print('\nSkipping GP-MODEL GEN - already completed.')
