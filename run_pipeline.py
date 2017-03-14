@@ -1,4 +1,5 @@
 # !/usr/bin/python3
+import sys
 from tools import Participant
 from preprocessing import KalmanImputation, MissingnessDT
 from analysis import Periodicity
@@ -6,11 +7,17 @@ from analysis import Periodicity
 # Overarching SleepSight pipeline script
 
 #ISS06 - remove timestamp from p.passiveSensors
-
-
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
-p = Participant(id=10, path=path)
+
+args = sys.argv
+if len(args) > 1:
+    participantID = args[1]
+    path = args[2]
+    plot_path = args[3]
+
+p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
