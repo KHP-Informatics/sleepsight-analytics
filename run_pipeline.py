@@ -13,6 +13,7 @@ plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSigh
 
 args = sys.argv
 if len(args) > 1:
+    print('Input arguments: {}'.format(args))
     participantID = args[1]
     path = args[2]
     plot_path = args[3]
