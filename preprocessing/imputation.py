@@ -46,7 +46,8 @@ class KalmanImputation:
 
     def limitToPositiveVals(self):
         negs = np.where(self.predicted_states[:, 0] < 0)
-        self.predicted_states[negs][0] = 0
+        if len(negs) > 0:
+            self.predicted_states[negs][0] = 0
 
     def plot(self):
         # Plot lines for the observations without noise, the estimated position of the
