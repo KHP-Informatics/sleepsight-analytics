@@ -3,6 +3,10 @@ import sys
 from tools import Participant
 from preprocessing import KalmanImputation, MissingnessDT
 from analysis import Periodicity
+import matplotlib
+
+## importing 'matplotlib' here to instruct the use of any X-backend window for plots (necessary for servers)
+matplotlib.use('Agg')
 
 # Overarching SleepSight pipeline script
 
