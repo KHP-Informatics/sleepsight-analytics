@@ -17,10 +17,10 @@ class GpModel:
         self.xData = self.passiveData[xSelection]
 
     def createIndexTable(self):
-        self.indexTable = []
+        self.indexDict = []
         self.extractDateIdxsFromYData()
         self.extractDateIdxsFromXDataBasedOnY()
-        print(self.indexTable)
+        print(self.indexDict)
 
     def extractDateIdxsFromYData(self):
         for i in range(len(self.yData)):
@@ -29,7 +29,7 @@ class GpModel:
             startDate, endDate = self.determineDatesFromYData(i)
             entry['dateStart'] = startDate
             entry['dateEnd'] = endDate
-            self.indexTable.append(entry)
+            self.indexDict.append(entry)
 
     def determineDatesFromYData(self, index):
         dt_str = list(self.activeData[index:(index+1)]['datetime'])[0]
@@ -45,8 +45,8 @@ class GpModel:
         idxEnd = 0
         currentTableIndex = 0
         for i in range(len(self.xData)):
-            dateStart = self.indexTable[currentTableIndex]['dateStart']
-            dateEnd = self.indexTable[currentTableIndex]['dateEnd']
+            dateStart = self.indexDict[currentTableIndex]['dateStart']
+            dateEnd = self.indexDict[currentTableIndex]['dateEnd']
             dateXDataStr = list(self.xData[i:(i + 1)]['timestamp'])[0]
             dateXData = datetime.datetime.strptime(dateXDataStr, '%Y-%m-%d %H:%M')
             if dateXData <= dateStart and dateXData < dateEnd:
@@ -54,6 +54,6 @@ class GpModel:
             if dateXData <= dateEnd:
                 idxEnd = i
             if dateXData == dateEnd or i == (len(self.xData) - 1):
-                self.indexTable[currentTableIndex]['indexStart'] = idxStart
-                self.indexTable[currentTableIndex]['indexEnd'] = idxEnd
+                self.indexDict[currentTableIndex]['indexStart'] = idxStart
+                self.indexDict[currentTableIndex]['indexEnd'] = idxEnd
                 currentTableIndex += 1
