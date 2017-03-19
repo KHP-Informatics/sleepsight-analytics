@@ -91,8 +91,8 @@ else:
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
     print('\nContinuing with GP-MODEL GEN...')
-    gpm = GpModel(dayDivisionHour=12)
+    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12)
     gpm.submitData(active=p.activeData, passive=p.passiveData)
-    gpm.createIndexTable(p.passiveSensors, 'total')
+    gpm.createIndexTable()
 else:
     print('\nSkipping GP-MODEL GEN - already completed.')
