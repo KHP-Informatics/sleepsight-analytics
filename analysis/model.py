@@ -20,7 +20,6 @@ class GpModel:
         self.indexDict = []
         self.extractDateIdxsFromYData()
         self.extractDateIdxsFromXDataBasedOnY()
-        print(self.indexDict)
 
     def extractDateIdxsFromYData(self):
         for i in range(len(self.yData)):
