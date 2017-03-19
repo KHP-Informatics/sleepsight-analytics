@@ -45,7 +45,11 @@ class Participant:
 
     @property
     def passiveSensors(self):
-        return self.__passiveSensors
+        psWithoutTimeStamp = []
+        for ps in self.__passiveSensors:
+            if ps not in 'timestamp':
+                psWithoutTimeStamp.append(ps)
+        return psWithoutTimeStamp
 
     @passiveSensors.setter
     def passiveSensors(self, arr):

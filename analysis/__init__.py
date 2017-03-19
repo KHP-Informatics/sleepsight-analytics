@@ -1,2 +1,3 @@
 from analysis.periodicity import Periodicity
-__all__ = ['periodicity']
+from analysis.model import GpModel
+__all__ = ['periodicity', 'gpmodel']

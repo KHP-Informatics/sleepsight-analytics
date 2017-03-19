@@ -6,12 +6,12 @@ matplotlib.use('Agg')
 import sys
 from tools import Participant
 from preprocessing import KalmanImputation, MissingnessDT
-from analysis import Periodicity
+from analysis import Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
 
 #ISS06 - remove timestamp from p.passiveSensors
-participantID = 1
+participantID = 2
 path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
 
@@ -91,6 +91,8 @@ else:
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
     print('\nContinuing with GP-MODEL GEN...')
-    # CONTINUE HERE!!
+    gpm = GpModel(dayDivisionHour=12)
+    gpm.submitData(active=p.activeData, passive=p.passiveData)
+    gpm.createIndexTable(p.passiveSensors, 'total')
 else:
     print('\nSkipping GP-MODEL GEN - already completed.')
