@@ -46,9 +46,9 @@ class KalmanImputation:
 
     def limitToPositiveVals(self):
         negs = np.where(self.predicted_states[:, 0] < 0)
-        nRows = len(self.predicted_states[:,0])
+        nRows = len(self.predicted_states[:, 0])
         if len(negs) > 0:
-            for neg in negs:
+            for neg in negs[0]:
                 if neg <= nRows:
                     self.predicted_states[neg][0] = 0
 
