@@ -12,8 +12,8 @@ from analysis import Periodicity, GpModel
 
 #ISS06 - remove timestamp from p.passiveSensors
 participantID = 2
-path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_data/'
-plot_path = '/Users/Kerz/Documents/projects/SleepSight/Data-SleepSight/SleepSight_methods_paper_plots/'
+path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
+plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
 args = sys.argv
 if len(args) > 1:
