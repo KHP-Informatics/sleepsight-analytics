@@ -1,3 +1,4 @@
 from analysis.periodicity import Periodicity
 from analysis.model import GpModel
-__all__ = ['periodicity', 'gpmodel']
+from analysis.missingness import MissingnessDT, MissingnessDT2
+__all__ = ['periodicity', 'gpmodel', 'missingnessdt', 'missingnessdt2']

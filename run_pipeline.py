@@ -5,14 +5,15 @@ matplotlib.use('Agg')
 
 import sys
 from tools import Participant
-from preprocessing import KalmanImputation, MissingnessDT
-from analysis import Periodicity, GpModel
+from preprocessing import KalmanImputation
+from analysis import MissingnessDT2, Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
 
 #ISS07 - implment Package loss in missingnes.py
 
-participantID = 10
+
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -38,6 +39,27 @@ if not p.isPipelineTaskCompleted('trim data'):
     p.saveSnapshot(path)
 else:
     print('\nSkipping TRIM DATA - already completed.')
+
+
+# Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
+if not p.isPipelineTaskCompleted('missingness'):
+    print('\nContinuing with MISSINGNESS computation...')
+    mdt = MissingnessDT2(p.passiveData, p.activeData)
+    #mdt.setSensors(p.passiveSensors)
+    #mdt.setDataset(p.passiveData)
+    #mdt.computeMissingness()
+    mdt.constructDecisionTree()
+    mdt.testing()
+    mdt.run()
+    mdt.formatMissingness()
+    print(mdt)
+    #p.missingness = mdt.root
+    #p.updatePipelineStatusForTask('missingness')
+    #p.saveSnapshot(path)
+else:
+    print('\nSkipping MISSINGNESS - already completed.')
+
+exit()
 
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):

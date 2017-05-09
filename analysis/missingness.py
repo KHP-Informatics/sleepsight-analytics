@@ -1,6 +1,7 @@
 # !/bin/python3
 import numpy as np
 import pandas as pd
+import datetime
 from tools import TreeLeaf, TreeNode
 
 # Module to categorise values into:
@@ -18,48 +19,115 @@ from tools import TreeLeaf, TreeNode
 
 class MissingnessDT2:
 
-    def __init__(self):
+    def __init__(self, passiveData, activeData):
+        self.passive = passiveData
+        self.active = activeData
+
+    def constructDecisionTree(self):
+
+        def evalBattery(data):
+            batteryEvalStart = data[['timestamp', 'battery']].values[0]
+            batteryEvalEnd = data[['timestamp', 'battery']].values[4]
+            if batteryEvalStart[1] in '-' or float(batteryEvalStart[1]) > 1:
+                return (False, data)
+            else:
+                dateStart = datetime.datetime.strptime(batteryEvalStart[0], '%Y-%m-%d %H:%M')
+                dateEnd = datetime.datetime.strptime(batteryEvalEnd[0], '%Y-%m-%d %H:%M')
+                elapsedTime = dateEnd - dateStart
+                elapsedMin = elapsedTime.total_seconds() / 60
+                return (True, batteryEvalStart[0])
+
+        def evalHeartRate(data):
+            heartEval = data[['timestamp', 'heart_Minutes']].values
+            if heartEval[0][1] not in '-':
+                return (False, data)
+            else:
+                hasNotValue = True
+                for i in range(1, len(heartEval)):
+                    if heartEval[i][1] not in '-':
+                        hasNotValue = False
+                        if not hasNotValue:
+                            break
+                return (hasNotValue, heartEval[0][0])
+
+        def evalTransmissionFailure(data):
+            tfTime = data['timestamp'].values
+            tfEval = data[['steps', 'light', 'FAM', 'LAM', 'VAM', 'awake_count']].values
+            tfEvalFlat = [val for sublist in tfEval for val in sublist]
+            hasNotValue = True
+            for i in range(0, len(tfEvalFlat)):
+                if tfEvalFlat[i] not in '-':
+                    hasNotValue = False
+                    if not hasNotValue:
+                        break
+            return (hasNotValue, tfTime[0])
+
+        def finaLeafPass(data):
+            time = data.values[0][0]
+            return (True, time)
+
+        def channelThrough(d):
+            return (True, d)
+
+        def simFailure(d):
+            return (False, d)
+
+        leaf0 = TreeLeaf(name='Not Charged', evalMethod=evalBattery)
+        leaf1 = TreeLeaf(name='Not Worn', evalMethod=evalHeartRate)
+        leaf2 = TreeLeaf(name='Transmission Failure', evalMethod=evalTransmissionFailure)
+        leaf3 = TreeLeaf(name='No Missingness', evalMethod=finaLeafPass)
+        node2 = TreeNode(name='Leaf2<>Leaf3', children=[leaf2, leaf3], evalMethod=channelThrough)
+        node1 = TreeNode(name='Leaf1<>Node2', children=[leaf1, node2], evalMethod=channelThrough)
+        self.root = TreeNode(name='Root[Leaf0<>Node1]', children=[leaf0, node1], evalMethod=channelThrough)
+
+    def run(self):
+        for i in range(self.passive.index[0], self.passive.index[round(len(self.passive.index)-10)]):
+            self.root.invoke(self.passive.loc[i:(i+10)])
+        self.result = self.root.retrieveLeaves()
+
+    def testing(self):
         pass
 
+    def formatMissingness(self):
+        self.missingness = {'count':dict(), 'daily':dict()}
+        for category in self.result:
+            self.missingness['count'][category.name] = len(category.result)
+            self.missingness['daily'][category.name] = self.countDaily(category)
+        print(self.missingness)
+
+    def countDaily(self, category):
+        idxEnd = len(self.passive['timestamp'].values)-1
+        dayEnd = datetime.datetime.strptime(self.passive['timestamp'].values[idxEnd], '%Y-%m-%d %H:%M')
+        dayStart = datetime.datetime.strptime(self.passive['timestamp'].values[0], '%Y-%m-%d %H:%M')
+        delta = dayEnd - dayStart
+        dailyCount = [0]*delta.days
+        if len(category.result) > 0:
+            evalDay = datetime.datetime.strptime(category.result[0], '%Y-%m-%d %H:%M')
+            dayIdx = 0
+            for dateTime in category.result:
+                currentDay = datetime.datetime.strptime(dateTime, '%Y-%m-%d %H:%M')
+                if evalDay.date() == currentDay.date():
+                    dailyCount[dayIdx] += 1
+                else:
+                    evalDay = currentDay
+                    dayIdx +=1
+                    if dayIdx < len(dailyCount):
+                        dailyCount[dayIdx] += 1
+                    else:
+                        break
+        return dailyCount
 
 
-def rootMethod(b):
-    return b
 
-def lower10(val):
-    if val < 10:
-        return (True, val)
-    return (False, val)
 
-def greater10(val):
-    if val > 10:
-        return (True, val)
-    return (False, val)
 
-def equal10(val):
-    if val == 10:
-        return (True, val)
-    return (False, val)
+    def __str__(self):
+        return self.root.__str__()
 
-def node1M(val):
-    if val >= 10:
-        return (True, val)
-    return (False, val)
 
-leaf1 = TreeLeaf(name="Lower", evalMethod=lower10)
-leaf2 = TreeLeaf(name="Greater", evalMethod=greater10)
-leaf3 = TreeLeaf(name="Equal", evalMethod=equal10)
-node1 = TreeNode(name='node1', children=[leaf2, leaf3], evalMethod=node1M)
-root = TreeNode(name='root', children=[leaf1, node1], evalMethod=rootMethod)
 
-data = [1,2,3,3,10,7,6,45,213,235,46,54,6,34,234,23,10,4,3,4,55,6,47,2]
 
-for d in data:
-    root.invoke(d)
-print(root)
 
-l = root.retrieveLeaves()
-print(l)
 
 
 

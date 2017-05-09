@@ -1,4 +1,35 @@
 # !/bin/python3
+####################### Example ###############################################
+#def rootMethod(b):
+#    return b
+
+#def lower10(val):
+#    if val < 10:
+#        return (True, val)
+#    return (False, val)
+
+#def greater10(val):
+#    if val > 10:
+#        return (True, val)
+#    return (False, val)
+
+#def equal10(val):
+#    if val == 10:
+#        return (True, val)
+#    return (False, val)
+
+#def node1M(val):
+#    if val >= 10:
+#        return (True, val)
+#    return (False, val)
+
+#leaf1 = TreeLeaf(name="Lower", evalMethod=lower10)
+#leaf2 = TreeLeaf(name="Greater", evalMethod=greater10)
+#leaf3 = TreeLeaf(name="Equal", evalMethod=equal10)
+#node1 = TreeNode(name='node1', children=[leaf2, leaf3], evalMethod=node1M)
+#root = TreeNode(name='root', children=[leaf1, node1], evalMethod=rootMethod)
+#print(root)
+###############################################################################
 
 class TreeNode:
 
@@ -50,11 +81,12 @@ class TreeLeaf:
         passedEval, result = self.evalMethod(parameters)
         if passedEval:
             self.result.append(result)
-            self.log.append(log)
+            if self.enableLog:
+                self.log.append(log)
         return passedEval
 
     def __str__(self):
         if self.enableLog:
             return '{}: {}   ({})'.format(self.name, self.result, self.log)
-        return '{}: {}'.format(self.name, self.result)
+        return '{}: {}'.format(self.name, len(self.result))
 
