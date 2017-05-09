@@ -1,6 +1,7 @@
 # !/bin/python3
 import numpy as np
 import pandas as pd
+from tools import TreeLeaf, TreeNode
 
 # Module to categorise values into:
 # 1. Not missing
@@ -14,6 +15,53 @@ import pandas as pd
 # If all intra FB values are missing: either not worn
 # If battery =<= 1 not charged
 # If phone sensors + (non intra) wearables missing for more than 6 minutes = package loss
+
+class MissingnessDT2:
+
+    def __init__(self):
+        pass
+
+
+
+def rootMethod(b):
+    return b
+
+def lower10(val):
+    if val < 10:
+        return (True, val)
+    return (False, val)
+
+def greater10(val):
+    if val > 10:
+        return (True, val)
+    return (False, val)
+
+def equal10(val):
+    if val == 10:
+        return (True, val)
+    return (False, val)
+
+def node1M(val):
+    if val >= 10:
+        return (True, val)
+    return (False, val)
+
+leaf1 = TreeLeaf(name="Lower", evalMethod=lower10)
+leaf2 = TreeLeaf(name="Greater", evalMethod=greater10)
+leaf3 = TreeLeaf(name="Equal", evalMethod=equal10)
+node1 = TreeNode(name='node1', children=[leaf2, leaf3], evalMethod=node1M)
+root = TreeNode(name='root', children=[leaf1, node1], evalMethod=rootMethod)
+
+data = [1,2,3,3,10,7,6,45,213,235,46,54,6,34,234,23,10,4,3,4,55,6,47,2]
+
+for d in data:
+    root.invoke(d)
+print(root)
+
+l = root.retrieveLeaves()
+print(l)
+
+
 
 class MissingnessDT:
 

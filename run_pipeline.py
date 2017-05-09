@@ -10,8 +10,9 @@ from analysis import Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
 
-#ISS06 - remove timestamp from p.passiveSensors
-participantID = 2
+#ISS07 - implment Package loss in missingnes.py
+
+participantID = 10
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
