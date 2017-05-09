@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import sys
 from tools import Participant
 from preprocessing import KalmanImputation
-from analysis import MissingnessDT2, Periodicity, GpModel
+from analysis import MissingnessDT, Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
 
@@ -44,36 +44,18 @@ else:
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):
     print('\nContinuing with MISSINGNESS computation...')
-    mdt = MissingnessDT2(p.passiveData, p.activeData)
-    #mdt.setSensors(p.passiveSensors)
-    #mdt.setDataset(p.passiveData)
-    #mdt.computeMissingness()
+    mdt = MissingnessDT(p.passiveData, p.activeData, p.info['startDate'])
     mdt.constructDecisionTree()
-    mdt.testing()
     mdt.run()
     mdt.formatMissingness()
     print(mdt)
-    #p.missingness = mdt.root
+    p.missingness = mdt.missingness
     #p.updatePipelineStatusForTask('missingness')
-    #p.saveSnapshot(path)
+    p.saveSnapshot(path)
 else:
     print('\nSkipping MISSINGNESS - already completed.')
 
 exit()
-
-# Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
-if not p.isPipelineTaskCompleted('missingness'):
-    print('\nContinuing with MISSINGNESS computation...')
-    mdt = MissingnessDT()
-    mdt.setSensors(p.passiveSensors)
-    mdt.setDataset(p.passiveData)
-    mdt.computeMissingness()
-    print(mdt)
-    p.missingness = mdt.missingness
-    p.updatePipelineStatusForTask('missingness')
-    p.saveSnapshot(path)
-else:
-    print('\nSkipping MISSINGNESS - already completed.')
 
 # Task: 'imputation' (Kalman smoothing)
 if not p.isPipelineTaskCompleted('imputation'):
