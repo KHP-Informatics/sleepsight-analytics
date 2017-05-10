@@ -40,4 +40,3 @@ class Aggregates:
     def getVariable(self, participant, variableName):
         return getattr(participant, variableName)
 
-
