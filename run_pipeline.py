@@ -28,7 +28,8 @@ p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
-
+print(p)
+exit()
 print('\nBegin analysis pipeline:')
 
 # Task: 'trim data' to Study Duration

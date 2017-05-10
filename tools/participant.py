@@ -405,8 +405,8 @@ class Participant:
                                                     self.pipelineStatus['missingness'],
                                                     self.pipelineStatus['periodicity'],
                                                     self.pipelineStatus['GP model gen.'],
-                                                    self.pipelineStatus['Anomaly detect.'],
-                                                    self.pipelineStatus['Association']
+                                                    self.pipelineStatus['anomaly detect.'],
+                                                    self.pipelineStatus['association']
                                                 )
         rendered = classInfo + participantInfo + pipelineInfo
         return rendered
