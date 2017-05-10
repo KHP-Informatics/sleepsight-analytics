@@ -34,24 +34,24 @@ class Compliance:
 
     def plot(self, show=False):
         plt.close('all')
-        plt.figure(figsize=(10,8))
+        plt.figure(figsize=(9, 9))
 
-        plt.subplot(2, 5, (1,5))
-        self.dfDailyMean.plot(yerr=self.dfDailySEM ,ax=plt.gca(), elinewidth=0.6)
+        plt.subplot(2, 5, (1, 5))
+        self.dfCount.T.plot(kind='bar', ax=plt.gca())
         plt.axhline(y=70, color='black', linewidth=0.7)
         plt.title('A', loc='left', size='16')
-        plt.xlabel('Study period (in days)')
+        plt.xlabel('Participant')
         plt.ylabel('Data completeness (%)')
         plt.legend([])
 
         plt.subplot(2, 5, (6,8))
-        self.dfCount.T.plot(kind='bar', ax=plt.gca())
+        self.dfDailyMean.plot(yerr=self.dfDailySEM ,ax=plt.gca(), elinewidth=0.6)
         plt.axhline(y=70, color='black', linewidth=0.7)
         plt.title('B', loc='left', size='16')
-        plt.xlabel('Participant')
+        plt.xlabel('Study period (in days)')
         plt.ylabel('Data completeness (%)')
-        plt.legend(bbox_to_anchor=(0, -0.6, 1., .102), loc=8,
-           ncol=3, mode="expand", borderpad=0.6, frameon=True)
+        plt.legend(bbox_to_anchor=(0, -0.5, 1., .102), loc=8,
+                   ncol=3, mode="expand", borderpad=0.6, frameon=True)
 
         plt.subplot(2, 5, (9,10))
         self.dfCountMean.plot(kind='bar',yerr=self.dfCountSEM)
