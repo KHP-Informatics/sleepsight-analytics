@@ -19,9 +19,10 @@ from tools import TreeLeaf, TreeNode
 
 class MissingnessDT:
 
-    def __init__(self, passiveData, activeData, startDate):
+    def __init__(self, passiveData, activeDataSymptom, activeDataSleep, startDate):
         self.passive = passiveData
-        self.active = activeData
+        self.activeSymptom = activeDataSymptom
+        self.activeSleep = activeDataSleep
         self.startDate = datetime.datetime.strptime(startDate, '%d/%m/%Y')
 
     def constructDecisionTree(self):
@@ -92,10 +93,10 @@ class MissingnessDT:
         for category in self.result:
             self.missingness['count'][category.name] = len(category.result)
             self.missingness['daily'][category.name] = self.countDailyTreeLeaf(category)
-        self.missingness['count']['symptom'] = len(self.active['datetime'].values)
-        self.missingness['daily']['symptom'] = self.countDailyActive(self.active['datetime'].values)
-        #self.missingness['count']['sleep'] = len(X)
-        #self.missingness['daily']['sleep'] = self.countDailyActive(X)
+        self.missingness['count']['symptom'] = len(self.activeSymptom['datetime'].values)
+        self.missingness['daily']['symptom'] = self.countDailyActive(self.activeSymptom['datetime'].values)
+        self.missingness['count']['sleep'] = len(self.activeSleep['datetime'].values)
+        self.missingness['daily']['sleep'] = self.countDailyActive(self.activeSleep['datetime'].values)
         print(self.missingness)
 
     def countDailyTreeLeaf(self, category):
@@ -121,7 +122,7 @@ class MissingnessDT:
         return dailyCount
 
     def countDailyActive(self, dates):
-        dates = self.active['datetime'].values
+        dates = self.activeSymptom['datetime'].values
         dailyCount = [0]*56
         dayIdx = 0
         evalDay = self.startDate

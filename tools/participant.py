@@ -305,10 +305,10 @@ class Participant:
         self.activeDataSleep = self.formatSleepData(input_data)
 
     def formatSleepData(self, input_data):
-        cols = ['dateTime', 'bedTime', 'sleepQuality', 'wakeTime']
+        cols = ['datetime', 'bedTime', 'sleepQuality', 'wakeTime']
         df = pd.DataFrame(input_data[1:], columns=cols)
-        df['dateTime'] = self.formatTimestampToDateTime(df['dateTime'])
-        return df.sort_values('dateTime')
+        df['dateTime'] = self.formatTimestampToDateTime(df['datetime'])
+        return df.sort_values('datetime')
 
     def loadMetaData(self, filename, selector=''):
         if selector == '':

@@ -29,7 +29,7 @@ p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
 print(p)
-exit()
+
 print('\nBegin analysis pipeline:')
 
 # Task: 'trim data' to Study Duration
@@ -45,7 +45,10 @@ else:
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):
     print('\nContinuing with MISSINGNESS computation...')
-    mdt = MissingnessDT(p.passiveData, p.activeDataSymptom, p.info['startDate'])
+    mdt = MissingnessDT(passiveData=p.passiveData,
+                        activeDataSymptom=p.activeDataSymptom,
+                        activeDataSleep=p.activeDataSleep,
+                        startDate=p.info['startDate'])
     mdt.constructDecisionTree()
     mdt.run()
     mdt.formatMissingness()
