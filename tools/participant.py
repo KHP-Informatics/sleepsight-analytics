@@ -36,12 +36,20 @@ class Participant:
         self.__passiveData = data
 
     @property
-    def activeData(self):
-        return self.__activeData
+    def activeDataSymptom(self):
+        return self.__activeDataSymptom
 
-    @activeData.setter
-    def activeData(self, data):
-        self.__activeData = data
+    @activeDataSymptom.setter
+    def activeDataSymptom(self, data):
+        self.__activeDataSymptom = data
+
+    @property
+    def activeDataSleep(self):
+        return self.__activeDataSleep
+
+    @activeDataSleep.setter
+    def activeDataSleep(self, data):
+        self.__activeDataSleep = data
 
     @property
     def passiveSensors(self):
@@ -108,6 +116,10 @@ class Participant:
                 self.loadMetaData(self.metaDataFileName)
             self.saveSnapshot()
         else:
+            ###### to be removed #######
+            self.loadActiveData(activeSensFiles)
+            exit()
+            #####################
             self.loadSnapshot()
 
     def splitFilesIntoActiveAndPassive(self, files):
@@ -198,8 +210,10 @@ class Participant:
         return pd_ts
 
     def loadActiveData(self, filenames):
-        if '{}_symptoms_diary_tabluar.csv'.format(self.id) in filenames:
+        if '{}_symptoms_diary_tabluar.csv'.format(self.id) in filenames and \
+                        '{}_sleep_diary_tabluar.csv'.format(self.id) in filenames:
             self.loadActiveDataSymptoms()
+            self.loadActiveDataSleep()
             self.updatePipelineStatusForTask('active data')
         else:
             print('[WARN] No {}_symptoms_diary_tabluar.csv was found. Please load active data manually.'.format(self.id))
@@ -208,7 +222,7 @@ class Participant:
         file_path = self.path + '{}_symptoms_diary_tabluar.csv'.format(self.id)
         input_data = np.genfromtxt(file_path, delimiter=',', dtype="U")
         data = self.formatSymptomsData(input_data)
-        self.activeData = self.scoreSymptomsData(data)
+        self.activeDataSymptom = self.scoreSymptomsData(data)
 
     def formatSymptomsData(self, input_data):
         cols = self.formatRawSymptomsCols(input_data[0])
@@ -270,7 +284,6 @@ class Participant:
         pd_s.columns = cols
         return pd_s
 
-
     def formatSymptomsRowScores(self, val, exception_grandiosity=False):
         v = []
         for i in range(len(val)):
@@ -290,6 +303,17 @@ class Participant:
                 v.append(val[i])
         return v
 
+    def loadActiveDataSleep(self):
+        file_path = self.path + '{}_sleep_diary_tabluar.csv'.format(self.id)
+        input_data = np.genfromtxt(file_path, delimiter=',', dtype="U")
+        self.activeDataSleep = self.formatSleepData(input_data)
+
+    def formatSleepData(self, input_data):
+        cols = ['dateTime', 'bedTime', 'sleepQuality', 'wakeTime']
+        df = pd.DataFrame(input_data[1:], columns=cols)
+        df['dateTime'] = self.formatTimestampToDateTime(df['dateTime'])
+        return df.sort_values('dateTime')
+
     def loadMetaData(self, filename, selector=''):
         if selector == '':
             selector = self.id
@@ -304,7 +328,7 @@ class Participant:
         trimmedPassiveIdx = self.getTrimmedPassiveIndecies(start, end)
         self.passiveData = self.passiveData.drop(self.passiveData.index[trimmedPassiveIdx])
         trimmedActiveIdx = self.getTrimmedActiveIndecies(start, end)
-        self.activeData = self.activeData.drop(self.activeData.index[trimmedActiveIdx])
+        self.activeDataSymptom = self.activeDataSymptom.drop(self.activeDataSymptom.index[trimmedActiveIdx])
 
     def determineStartAndEndDates(self, startDate, endDate='', duration=0):
         start = datetime.datetime.strptime(startDate, '%d/%m/%Y')
@@ -326,8 +350,8 @@ class Participant:
 
     def getTrimmedActiveIndecies(self, start, end):
         idxs = []
-        for i in range(0, len(self.activeData)):
-            dateOfInterest = datetime.datetime.strptime(self.activeData['datetime'][i], '%Y-%m-%d %H:%M')
+        for i in range(0, len(self.activeDataSymptom)):
+            dateOfInterest = datetime.datetime.strptime(self.activeDataSymptom['datetime'][i], '%Y-%m-%d %H:%M')
             if dateOfInterest < start or end < dateOfInterest:
                 idxs.append(i)
         return idxs

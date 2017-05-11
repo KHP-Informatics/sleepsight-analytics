@@ -45,7 +45,7 @@ else:
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):
     print('\nContinuing with MISSINGNESS computation...')
-    mdt = MissingnessDT(p.passiveData, p.activeData, p.info['startDate'])
+    mdt = MissingnessDT(p.passiveData, p.activeDataSymptom, p.info['startDate'])
     mdt.constructDecisionTree()
     mdt.run()
     mdt.formatMissingness()
@@ -98,7 +98,7 @@ else:
 if not p.isPipelineTaskCompleted('GP model gen.'):
     print('\nContinuing with GP-MODEL GEN...')
     gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12)
-    gpm.submitData(active=p.activeData, passive=p.passiveData)
+    gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
     gpm.createIndexTable()
 else:
     print('\nSkipping GP-MODEL GEN - already completed.')
