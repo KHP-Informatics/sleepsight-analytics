@@ -80,7 +80,8 @@ class Compliance:
         tmpTable = pd.concat((self.dfCountMean, self.dfCountSEM), axis=1)
         tmpTable.columns = ['Mean (%)', 'SD (%)']
         tmpTable.index = [str.capitalize(idx) for idx in tmpTable.index]
-        tmpTable = tmpTable.round(2)
+        tmpTable['Mean (%)'] = tmpTable['Mean (%)'].astype(int)
+        tmpTable['SD (%)'] = tmpTable['SD (%)'].round(1)
         latextTable = tmpTable.to_latex()
         if save:
             path = self.aggr.pathPlot + 'ComplianceTable.tex'
