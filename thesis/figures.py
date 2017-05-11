@@ -9,7 +9,7 @@ class Compliance:
         self.passiveIdxNames = ['No Missingness', 'Not Charged', 'Not Worn', 'Transmission Failure']
         self.passiveDenominator = 60 * 24 * 56
         self.passiveDenominatorDaily = 60 * 24
-        self.activeIdxNames = ['symptom']
+        self.activeIdxNames = ['symptom', 'sleep']
         self.activeDenominator = 56
         self.activeDenominatorDaily = 1
 
@@ -75,4 +75,18 @@ class Compliance:
             plt.savefig(path, dpi=600)
         if show:
             plt.show()
+
+    def exportLatexTable(self, save=True):
+        tmpTable = pd.concat((self.dfCountMean, self.dfCountSEM), axis=1)
+        tmpTable.columns = ['Mean (%)', 'SD (%)']
+        tmpTable.index = [str.capitalize(idx) for idx in tmpTable.index]
+        tmpTable = tmpTable.round(2)
+        latextTable = tmpTable.to_latex()
+        if save:
+            path = self.aggr.pathPlot + 'ComplianceTable.tex'
+            f = open(path, 'w')
+            f.write(latextTable)
+            f.close()
+
+
 
