@@ -10,7 +10,6 @@ class Aggregates:
         self.pathPlot = pathPlot
         self.aggregates = self.loadParticipants()
 
-
     def loadParticipants(self):
         files = os.listdir(self.pathData)
         participants = []
@@ -22,7 +21,6 @@ class Aggregates:
                 p.load()
                 participants.append(p)
         return participants
-
 
     def getMissingness(self):
         count = dict()

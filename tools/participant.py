@@ -116,10 +116,6 @@ class Participant:
                 self.loadMetaData(self.metaDataFileName)
             self.saveSnapshot()
         else:
-            ###### to be removed #######
-            self.loadActiveData(activeSensFiles)
-            exit()
-            #####################
             self.loadSnapshot()
 
     def splitFilesIntoActiveAndPassive(self, files):
@@ -392,10 +388,12 @@ class Participant:
             pickle._dump(self.__dict__, output, pickle.HIGHEST_PROTOCOL)
 
     def loadSnapshot(self):
-        filename = self.path + self.id + "_participant.pkl"
+        tmp_path = self.path
+        filename = tmp_path + self.id + "_participant.pkl"
         with open(filename, "rb") as input_file:
             tmp_dict = pickle.load(input_file)
         self.__dict__.update(tmp_dict)
+        self.path = tmp_path
 
     def __str__(self):
         classInfo = '\nClass {} loads all relevant sensor data, formats and cashes it according to the state of ' \
