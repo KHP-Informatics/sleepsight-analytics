@@ -52,8 +52,6 @@ if not p.isPipelineTaskCompleted('missingness'):
     mdt.constructDecisionTree()
     mdt.run()
     mdt.formatMissingness()
-    print(mdt)
-    exit()
     p.missingness = mdt.missingness
     p.updatePipelineStatusForTask('missingness')
     p.saveSnapshot(path)
