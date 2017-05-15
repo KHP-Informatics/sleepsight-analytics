@@ -13,7 +13,7 @@ from analysis import MissingnessDT, Periodicity, GpModel
 #ISS07 - implment Package loss in missingnes.py
 
 
-participantID = 1
+participantID = 10
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -53,13 +53,13 @@ if not p.isPipelineTaskCompleted('missingness'):
     mdt.run()
     mdt.formatMissingness()
     print(mdt)
+    exit()
     p.missingness = mdt.missingness
-    #p.updatePipelineStatusForTask('missingness')
+    p.updatePipelineStatusForTask('missingness')
     p.saveSnapshot(path)
 else:
     print('\nSkipping MISSINGNESS - already completed.')
 
-exit()
 
 # Task: 'imputation' (Kalman smoothing)
 if not p.isPipelineTaskCompleted('imputation'):
@@ -96,6 +96,8 @@ if not p.isPipelineTaskCompleted('periodicity'):
     p.saveSnapshot(path)
 else:
     print('\nSkipping PERIODICITY - already completed.')
+
+exit()
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):

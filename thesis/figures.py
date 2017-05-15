@@ -44,6 +44,7 @@ class Compliance:
         plt.ylabel('Data completeness (%)')
         plt.legend([])
 
+        print(self.dfDailyMean)
         plt.subplot(2, 5, (6,8))
         self.dfDailyMean.plot(yerr=self.dfDailySEM ,ax=plt.gca(), elinewidth=0.6)
         plt.axhline(y=70, color='black', linewidth=0.7)
