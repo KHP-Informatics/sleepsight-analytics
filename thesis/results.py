@@ -114,6 +114,27 @@ class InfoGainTable:
             ig.calcInfoGain()
             self.results[labelOfLabels] = ig.infoGainTable['Information Gain']
             self.entropy[labelOfLabels] = ig.entropy
+        self.outputTable = pd.concat((self.entropy, self.results))
+
+    def formatFeatures(self, features):
+        formated = []
+        for feature in features:
+            tmp = feature.replace('.', ' ')
+            tmp = tmp.capitalize()
+            if tmp in 'Durationillness':
+                tmp = 'Duration of illness'
+            formated.append(tmp)
+        return formated
+
+    def exportLatexTable(self, plotPath, save=True):
+        tmpTable = self.outputTable
+        tmpTable.index = self.formatFeatures(tmpTable.index)
+        latextTable = tmpTable.to_latex()
+        if save:
+            path = plotPath + 'InformationGainTable.tex'
+            f = open(path, 'w')
+            f.write(latextTable)
+            f.close()
 
     def __str__(self):
         rendered = 'Information Gain for {}\n\n'.format(self.labelsOfLabels)

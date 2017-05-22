@@ -1,3 +1,4 @@
+import numpy as np
 from thesis import Aggregates, Compliance, InfoGainTable
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
@@ -5,11 +6,18 @@ plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
 aggr = Aggregates('.pkl', path, plot_path)
 comp = Compliance(aggr)
-comp.generateFigure(show=False, save=True)
-comp.exportLatexTable(save=True)
+#comp.generateFigure(show=False, save=True)
+#comp.exportLatexTable(save=True)
+
+
+
+
+comp = Compliance(aggr)
+comp.normaliseMissingness()
+passiveLabels = list(comp.dfCount.T['No Missingness'] > 70)
 
 infoTable = aggr.getPariticpantsInfo()
-labels = {'Test':['Yes','No','No','Yes','No','Yes','Yes','Yes','Yes','Yes','No','Yes','No','Yes']}
+labels = {'Passive': passiveLabels}
 features = [
             'PANSS.general',
             'PANSS.negative',
@@ -24,4 +32,3 @@ features = [
 igTable = InfoGainTable(infoTable[features], labels)
 igTable.run()
 print(igTable)
-
