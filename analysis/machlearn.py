@@ -16,7 +16,7 @@ class InfoGain:
 
     def calcInfoGain(self):
         for feature in self.features:
-            gain = ig.calcInfoGainOfFeature(self.data, self.labels, feature)
+            gain = self.calcInfoGainOfFeature(self.data, self.labels, feature)
             self.infoGainTable['Information Gain'][feature] = gain
         self.infoGainTable = self.infoGainTable.sort_values(by='Information Gain', ascending=False)
 

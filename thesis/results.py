@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from analysis import InfoGain
 import matplotlib.pyplot as plt
 
 
@@ -91,4 +93,30 @@ class Compliance:
             f.close()
 
 
+class InfoGainTable:
 
+    def __init__(self, infoTable, labels):
+        self.labelsOfLabels = labels.keys()
+        self.labels = labels
+        self.info = infoTable
+        self.features = self.info.columns
+        self.results = pd.DataFrame(data=np.zeros((len(self.features), len(self.labelsOfLabels))),
+                                    columns=self.labelsOfLabels)
+        self.results.index = self.features
+        self.entropy = pd.DataFrame(data=np.zeros((1, len(self.labelsOfLabels))),
+                                    columns=self.labelsOfLabels)
+        self.entropy.index = ['Entropy']
+
+    def run(self):
+        for labelOfLabels in self.labelsOfLabels:
+            labels = self.labels[labelOfLabels]
+            ig = InfoGain(self.info, labels)
+            ig.calcInfoGain()
+            self.results[labelOfLabels] = ig.infoGainTable['Information Gain']
+            self.entropy[labelOfLabels] = ig.entropy
+
+    def __str__(self):
+        rendered = 'Information Gain for {}\n\n'.format(self.labelsOfLabels)
+        rendered += '{}\n\n'.format(self.entropy)
+        rendered += 'Compliance Info Gain\n{}\n\n'.format(self.results)
+        return rendered

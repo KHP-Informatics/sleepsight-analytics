@@ -1,3 +1,3 @@
-from thesis.figures import Compliance
+from thesis.results import Compliance, InfoGainTable
 from thesis.aggregates import Aggregates
-__all__ = ['aggregates', 'compliance']
+__all__ = ['aggregates', 'compliance', 'infogaintable']
