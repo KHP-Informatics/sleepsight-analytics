@@ -56,3 +56,4 @@ class GpModel:
                 self.indexDict[currentTableIndex]['indexStart'] = idxStart
                 self.indexDict[currentTableIndex]['indexEnd'] = idxEnd
                 currentTableIndex += 1
+
