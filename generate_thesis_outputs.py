@@ -36,4 +36,4 @@ features = [
             ]
 igTable = InfoGainTable(infoTable[features], labels)
 igTable.run()
-igTable.exportLatexTable('/', orderedBy='Passive Data', show=True, save=False)
+igTable.exportLatexTable('/', orderedBy=('Passive data', 'Information Gain'), show=True, save=False)

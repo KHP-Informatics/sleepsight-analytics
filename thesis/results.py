@@ -108,13 +108,17 @@ class InfoGainTable:
         self.entropy.index = ['Entropy']
 
     def run(self):
+        resultTables = []
         for labelOfLabels in self.labelsOfLabels:
             labels = self.discretiseLabels(self.labels[labelOfLabels])
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
-            self.results[labelOfLabels] = ig.infoGainTable['Information Gain']
-            self.entropy[labelOfLabels] = ig.entropy
-        self.outputTable = pd.concat((self.entropy, self.results))
+
+            columnsMultiIndex = [(labelOfLabels, 'Information Gain'), (labelOfLabels, 'Threshold')]
+            ig.infoGainTable.columns = pd.MultiIndex.from_tuples(columnsMultiIndex)
+            resultTables.append(ig.infoGainTable)
+        self.outputTable = pd.concat(resultTables, axis=1)
+
 
     def discretiseLabels(self, rawLabels):
         classifiedLabels = ['Non-compliance', 'Reduced compliance', 'Sufficient compliance', 'High compliance']
@@ -143,6 +147,8 @@ class InfoGainTable:
     def exportLatexTable(self, plotPath, orderedBy, show=False, save=True):
         tmpTable = self.outputTable
         tmpTable.index = self.formatFeatures(tmpTable.index)
+        tmpTable = tmpTable.sort_index(level=1)
+        tmpTable = tmpTable.sort_values([orderedBy], ascending=False)
         latextTable = tmpTable.to_latex()
         if show:
             print(latextTable)

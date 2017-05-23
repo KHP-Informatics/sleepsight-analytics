@@ -10,14 +10,16 @@ class InfoGain:
         self.labels = labels
         self.features = self.data.columns
         self.entropy = self.calcEntropyOfSet(self.labels)
-        self.infoGainTable = pd.DataFrame(data=np.zeros(len(self.features)),
-                                          columns=['Information Gain'],
+        self.infoGainTable = pd.DataFrame(data=np.zeros((len(self.features), 2)),
+                                          columns=['Information Gain', 'Threshold'],
                                           index=self.features)
 
     def calcInfoGain(self):
         for feature in self.features:
             gain, igClass, igEntropy = self.calcInfoGainOfFeatureAccountingForContinuous(self.data, self.labels, feature)
-            self.infoGainTable['Information Gain'][feature] = gain
+
+            self.infoGainTable.loc[feature, 'Information Gain'] = gain
+            self.infoGainTable.loc[feature, 'Threshold'] = igClass
         self.infoGainTable = self.infoGainTable.sort_values(by='Information Gain', ascending=False)
 
     def calcEntropyOfSet(self, labels):
@@ -67,8 +69,9 @@ class InfoGain:
                 igClassTmp.append(c)
                 igEntropyTmp.append(e)
             gain, igEntropy = self.getClassWithGreatestGain(gainTmp, igEntropyTmp)
-            gain, igClass = self.getClassWithGreatestGain(gainTmp, dataSet[feature])
-
+            gain, igClass = self.getClassWithGreatestGain(gainTmp, igClassTmp)
+            gain, igClassLabel = self.getClassWithGreatestGain(gainTmp, dataSet[feature])
+            igClass = str(igClass) + str(igClassLabel)
         else:
             gain, igClass, igEntropy = self.calcInfoGainOfFeature(data, labels)
         return (gain, igClass, igEntropy)
