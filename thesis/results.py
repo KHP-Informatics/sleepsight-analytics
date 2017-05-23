@@ -109,12 +109,27 @@ class InfoGainTable:
 
     def run(self):
         for labelOfLabels in self.labelsOfLabels:
-            labels = self.labels[labelOfLabels]
+            labels = self.classifyLabels(self.labels[labelOfLabels])
+            print(labels)
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
             self.results[labelOfLabels] = ig.infoGainTable['Information Gain']
             self.entropy[labelOfLabels] = ig.entropy
         self.outputTable = pd.concat((self.entropy, self.results))
+
+    def classifyLabels(self, rawLabels):
+        classifiedLabels = ['Non-compliance', 'Reduced compliance', 'Sufficient compliance', 'High compliance']
+        labels = []
+        for i in range(len(rawLabels)):
+            if rawLabels[i] >= 85:
+                labels.append(classifiedLabels[3])
+            elif rawLabels[i] >= 70:
+                labels.append(classifiedLabels[2])
+            elif rawLabels[i] >= 50:
+                labels.append(classifiedLabels[1])
+            else:
+                labels.append(classifiedLabels[0])
+        return labels
 
     def formatFeatures(self, features):
         formated = []

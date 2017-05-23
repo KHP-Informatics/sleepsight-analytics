@@ -11,13 +11,19 @@ comp = Compliance(aggr)
 
 
 
-
+#ToDo: Implement fine-grained labels and continuous values in InfoGain class
 comp = Compliance(aggr)
 comp.normaliseMissingness()
-passiveLabels = list(comp.dfCount.T['No Missingness'] > 70)
+
+labelsNoMissingness = comp.dfCount.T['No Missingness']
+labelsSleep = comp.dfCount.T['sleep']
+labelsSymptom = comp.dfCount.T['symptom']
+
 
 infoTable = aggr.getPariticpantsInfo()
-labels = {'Passive': passiveLabels}
+labels = {'Passive data': labelsNoMissingness,
+          'Active (Sleep Q.)': labelsSleep,
+          'Active (Symptoms Q.)': labelsSymptom}
 features = [
             'PANSS.general',
             'PANSS.negative',
