@@ -132,7 +132,7 @@ class InfoGainTable:
     def normaliseInfoGain(self, result, entropy):
         result['Info. gain'] = result['Info. gain']/entropy*100
         result = result.fillna(0)
-        result['Info. gain'] = round(result['Info. gain'])
+        result = result.round({'Info. gain':1})
         result.columns = self.normalisedColumns
         return result
 
