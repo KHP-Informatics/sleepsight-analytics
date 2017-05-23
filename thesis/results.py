@@ -99,12 +99,8 @@ class InfoGainTable:
         self.labels = labels
         self.info = infoTable
         self.features = self.info.columns
-        self.results = pd.DataFrame(data=np.zeros((len(self.features), len(self.labelsOfLabels))),
-                                    columns=self.labelsOfLabels)
-        self.results.index = self.features
-        self.entropy = pd.DataFrame(data=np.zeros((1, len(self.labelsOfLabels))),
-                                    columns=self.labelsOfLabels)
-        self.entropy.index = ['Entropy']
+        self.normalisedColumns = ['Info. gain (%)', 'Threshold']
+        self.entropies = []
 
     def run(self):
         resultTables = []
@@ -112,12 +108,12 @@ class InfoGainTable:
             labels = self.discretiseLabels(self.labels[labelOfLabels])
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
-
-            columnsMultiIndex = [(labelOfLabels, 'Info. gain'), (labelOfLabels, 'Threshold')]
-            ig.infoGainTable.columns = pd.MultiIndex.from_tuples(columnsMultiIndex)
-            resultTables.append(ig.infoGainTable)
+            resultNormalise = self.normaliseInfoGain(ig.infoGainTable, ig.entropy)
+            columnsMultiIndex = [(labelOfLabels, self.normalisedColumns[0]), (labelOfLabels, self.normalisedColumns[1])]
+            resultNormalise.columns = pd.MultiIndex.from_tuples(columnsMultiIndex)
+            resultTables.append(resultNormalise)
+            self.entropies.append({labelOfLabels:ig.entropy})
         self.outputTable = pd.concat(resultTables, axis=1)
-
 
     def discretiseLabels(self, rawLabels):
         classifiedLabels = ['Non-compliance', 'Reduced compliance', 'Sufficient compliance', 'High compliance']
@@ -133,6 +129,25 @@ class InfoGainTable:
                 labels.append(classifiedLabels[0])
         return labels
 
+    def normaliseInfoGain(self, result, entropy):
+        result['Info. gain'] = result['Info. gain']/entropy*100
+        result = result.fillna(0)
+        result['Info. gain'] = round(result['Info. gain'])
+        result.columns = self.normalisedColumns
+        return result
+
+    def exportLatexTable(self, plotPath, orderedBy, save=True):
+        tmpTable = self.outputTable
+        tmpTable.index = self.formatFeatures(tmpTable.index)
+        tmpTable = tmpTable.sort_index(level=1)
+        tmpTable = tmpTable.sort_values([(orderedBy, self.normalisedColumns[0])], ascending=False)
+        latextTable = tmpTable.to_latex()
+        if save:
+            path = plotPath + 'DataComplianceInfoGain.tex'
+            f = open(path, 'w')
+            f.write(latextTable)
+            f.close()
+
     def formatFeatures(self, features):
         formated = []
         for feature in features:
@@ -143,20 +158,8 @@ class InfoGainTable:
             formated.append(tmp)
         return formated
 
-    def exportLatexTable(self, plotPath, orderedBy, save=True):
-        tmpTable = self.outputTable
-        tmpTable.index = self.formatFeatures(tmpTable.index)
-        tmpTable = tmpTable.sort_index(level=1)
-        tmpTable = tmpTable.sort_values([orderedBy], ascending=False)
-        latextTable = tmpTable.to_latex()
-        if save:
-            path = plotPath + 'DataComplianceInfoGain.tex'
-            f = open(path, 'w')
-            f.write(latextTable)
-            f.close()
-
     def __str__(self):
         rendered = 'Information Gain for {}\n\n'.format(self.labelsOfLabels)
-        rendered += '{}\n\n'.format(self.entropy)
-        rendered += 'Compliance Info Gain\n{}\n\n'.format(self.results)
+        rendered += 'Entropies\n{}\n\n'.format(pd.DataFrame(self.entropies))
+        rendered += 'Compliance Info Gain\n{}\n\n'.format(self.outputTable)
         return rendered

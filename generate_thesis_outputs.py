@@ -6,8 +6,8 @@ plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 # Compliance Figure
 aggr = Aggregates('.pkl', path, plot_path)
 comp = Compliance(aggr)
-comp.generateFigure(show=False, save=True)
-comp.exportLatexTable(save=True)
+#comp.generateFigure(show=False, save=True)
+#comp.exportLatexTable(save=True)
 
 # Compliance Information Gain
 comp = Compliance(aggr)
@@ -32,4 +32,5 @@ features = [
             ]
 igTable = InfoGainTable(infoTable[features], labels)
 igTable.run()
-igTable.exportLatexTable(aggr.pathPlot, orderedBy=('Passive data', 'Info. gain'), save=True)
+igTable.exportLatexTable(aggr.pathPlot, orderedBy='Passive data', save=True)
+print(igTable)
