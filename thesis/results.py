@@ -110,7 +110,6 @@ class InfoGainTable:
     def run(self):
         for labelOfLabels in self.labelsOfLabels:
             labels = self.discretiseLabels(self.labels[labelOfLabels])
-            print(labels)
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
             self.results[labelOfLabels] = ig.infoGainTable['Information Gain']
@@ -141,10 +140,12 @@ class InfoGainTable:
             formated.append(tmp)
         return formated
 
-    def exportLatexTable(self, plotPath, save=True):
+    def exportLatexTable(self, plotPath, orderedBy, show=False, save=True):
         tmpTable = self.outputTable
         tmpTable.index = self.formatFeatures(tmpTable.index)
         latextTable = tmpTable.to_latex()
+        if show:
+            print(latextTable)
         if save:
             path = plotPath + 'InformationGainTable.tex'
             f = open(path, 'w')

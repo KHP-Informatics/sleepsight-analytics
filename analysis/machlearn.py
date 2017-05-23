@@ -16,7 +16,7 @@ class InfoGain:
 
     def calcInfoGain(self):
         for feature in self.features:
-            gain = self.calcInfoGainOfFeature(self.data, self.labels, feature)
+            gain, igClass, igEntropy = self.calcInfoGainOfFeatureAccountingForContinuous(self.data, self.labels, feature)
             self.infoGainTable['Information Gain'][feature] = gain
         self.infoGainTable = self.infoGainTable.sort_values(by='Information Gain', ascending=False)
 
@@ -29,17 +29,17 @@ class InfoGain:
             entropy += self.calcEntropy(float(labelCounts[labelIndex])/nLabels)
         return entropy
 
-    def calcInfoGainOfFeature(self, data, labels, feature):
+    def calcInfoGainOfFeature(self, data, labels):
         gain = self.entropy
         nData = len(data)
         valueIndex = 0
-        values = np.unique(data[feature])
+        values = np.unique(data)
         featureCounts = np.zeros(len(values))
         entropy = np.zeros(len(values))
         for value in values:
             dataIndex = 0
             valueOrderedLabels = []
-            for datapoint in data[feature]:
+            for datapoint in data:
                 if datapoint == value:
                     featureCounts[valueIndex] += 1
                     valueOrderedLabels.append(labels[dataIndex])
@@ -48,9 +48,46 @@ class InfoGain:
             classCounts = self.compUniqueValueCount(valueOrderedLabels, labelValues)
             for classIndex in range(len(classCounts)):
                 entropy[valueIndex] += self.calcEntropy(float(classCounts[classIndex])/sum(classCounts))
+
             gain -= float(featureCounts[valueIndex])/nData * entropy[valueIndex]
             valueIndex += 1
-        return gain
+
+        igEntropy, igClass = self.getClassWithGreatestGain(entropy, values)
+        return (gain, igClass, igEntropy)
+
+    def calcInfoGainOfFeatureAccountingForContinuous(self, dataSet, labels, feature):
+        data = dataSet[feature]
+        isContinuous = self.isContinuous(dataSet[feature][0])
+        if isContinuous:
+            gainTmp = []; igClassTmp = []; igEntropyTmp = []
+            for i in range(len(data)):
+                data = self.discretise(dataSet[feature], i)
+                g, c, e = self.calcInfoGainOfFeature(data, labels)
+                gainTmp.append(g)
+                igClassTmp.append(c)
+                igEntropyTmp.append(e)
+            gain, igEntropy = self.getClassWithGreatestGain(gainTmp, igEntropyTmp)
+            gain, igClass = self.getClassWithGreatestGain(gainTmp, dataSet[feature])
+
+        else:
+            gain, igClass, igEntropy = self.calcInfoGainOfFeature(data, labels)
+        return (gain, igClass, igEntropy)
+
+    def isContinuous(self, value):
+        if hasattr(value, 'dtype'):
+            isContinuous = np.issubdtype(value.dtype, np.number)
+        else:
+            try:
+                int(value)
+                isContinuous = True
+            except ValueError:
+                isContinuous = False
+        return isContinuous
+
+    def getClassWithGreatestGain(self, ofMax, getAtIndex):
+        idx = np.argmax(ofMax)
+        return (ofMax[idx], getAtIndex[idx])
+
 
     def compUniqueValueCount(self, values, uniqueValues):
         valueIndex = 0
@@ -67,6 +104,12 @@ class InfoGain:
             return -p * np.log2(p)
         else:
             return 0
+
+    def discretise(self, data, atIndex):
+        discretisedData = np.zeros(len(data), dtype=str)
+        discretisedData[data < data[atIndex]] = '<'
+        discretisedData[data >= data[atIndex]] = '>='
+        return discretisedData
 
     def __str__(self):
         rendered = '\nInformation Gain Output\n(Set Entropy: {})\n\n'.format(self.entropy)
