@@ -1,24 +1,20 @@
-import numpy as np
 from thesis import Aggregates, Compliance, InfoGainTable
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
+# Compliance Figure
 aggr = Aggregates('.pkl', path, plot_path)
 comp = Compliance(aggr)
-#comp.generateFigure(show=False, save=True)
-#comp.exportLatexTable(save=True)
+comp.generateFigure(show=False, save=True)
+comp.exportLatexTable(save=True)
 
-
-
-#ToDo: Implement fine-grained labels and continuous values in InfoGain class
+# Compliance Information Gain
 comp = Compliance(aggr)
 comp.normaliseMissingness()
-
 labelsNoMissingness = comp.dfCount.T['No Missingness']
 labelsSleep = comp.dfCount.T['sleep']
 labelsSymptom = comp.dfCount.T['symptom']
-
 infoTable = aggr.getPariticpantsInfo()
 labels = {'Passive data': labelsNoMissingness,
           'Active (Sleep Q.)': labelsSleep,
@@ -36,4 +32,4 @@ features = [
             ]
 igTable = InfoGainTable(infoTable[features], labels)
 igTable.run()
-igTable.exportLatexTable('/', orderedBy=('Passive data', 'Information Gain'), show=True, save=False)
+igTable.exportLatexTable(aggr.pathPlot, orderedBy=('Passive data', 'Info. gain'), save=True)

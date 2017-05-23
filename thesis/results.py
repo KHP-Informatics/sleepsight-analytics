@@ -46,7 +46,6 @@ class Compliance:
         plt.ylabel('Data completeness (%)')
         plt.legend([])
 
-        print(self.dfDailyMean)
         plt.subplot(2, 5, (6,8))
         self.dfDailyMean.plot(yerr=self.dfDailySEM ,ax=plt.gca(), elinewidth=0.6)
         plt.axhline(y=70, color='black', linewidth=0.7)
@@ -87,7 +86,7 @@ class Compliance:
         tmpTable['SD (%)'] = tmpTable['SD (%)'].round(1)
         latextTable = tmpTable.to_latex()
         if save:
-            path = self.aggr.pathPlot + 'ComplianceTable.tex'
+            path = self.aggr.pathPlot + 'DataCompliance.tex'
             f = open(path, 'w')
             f.write(latextTable)
             f.close()
@@ -114,7 +113,7 @@ class InfoGainTable:
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
 
-            columnsMultiIndex = [(labelOfLabels, 'Information Gain'), (labelOfLabels, 'Threshold')]
+            columnsMultiIndex = [(labelOfLabels, 'Info. gain'), (labelOfLabels, 'Threshold')]
             ig.infoGainTable.columns = pd.MultiIndex.from_tuples(columnsMultiIndex)
             resultTables.append(ig.infoGainTable)
         self.outputTable = pd.concat(resultTables, axis=1)
@@ -144,16 +143,14 @@ class InfoGainTable:
             formated.append(tmp)
         return formated
 
-    def exportLatexTable(self, plotPath, orderedBy, show=False, save=True):
+    def exportLatexTable(self, plotPath, orderedBy, save=True):
         tmpTable = self.outputTable
         tmpTable.index = self.formatFeatures(tmpTable.index)
         tmpTable = tmpTable.sort_index(level=1)
         tmpTable = tmpTable.sort_values([orderedBy], ascending=False)
         latextTable = tmpTable.to_latex()
-        if show:
-            print(latextTable)
         if save:
-            path = plotPath + 'InformationGainTable.tex'
+            path = plotPath + 'DataComplianceInfoGain.tex'
             f = open(path, 'w')
             f.write(latextTable)
             f.close()

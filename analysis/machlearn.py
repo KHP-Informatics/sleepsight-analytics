@@ -11,16 +11,16 @@ class InfoGain:
         self.features = self.data.columns
         self.entropy = self.calcEntropyOfSet(self.labels)
         self.infoGainTable = pd.DataFrame(data=np.zeros((len(self.features), 2)),
-                                          columns=['Information Gain', 'Threshold'],
+                                          columns=['Info. gain', 'Threshold'],
                                           index=self.features)
 
     def calcInfoGain(self):
         for feature in self.features:
             gain, igClass, igEntropy = self.calcInfoGainOfFeatureAccountingForContinuous(self.data, self.labels, feature)
 
-            self.infoGainTable.loc[feature, 'Information Gain'] = gain
+            self.infoGainTable.loc[feature, 'Info. gain'] = gain
             self.infoGainTable.loc[feature, 'Threshold'] = igClass
-        self.infoGainTable = self.infoGainTable.sort_values(by='Information Gain', ascending=False)
+        self.infoGainTable = self.infoGainTable.sort_values(by='Info. gain', ascending=False)
 
     def calcEntropyOfSet(self, labels):
         nLabels = len(labels)
