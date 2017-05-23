@@ -109,7 +109,7 @@ class InfoGainTable:
 
     def run(self):
         for labelOfLabels in self.labelsOfLabels:
-            labels = self.classifyLabels(self.labels[labelOfLabels])
+            labels = self.discretiseLabels(self.labels[labelOfLabels])
             print(labels)
             ig = InfoGain(self.info, labels)
             ig.calcInfoGain()
@@ -117,7 +117,7 @@ class InfoGainTable:
             self.entropy[labelOfLabels] = ig.entropy
         self.outputTable = pd.concat((self.entropy, self.results))
 
-    def classifyLabels(self, rawLabels):
+    def discretiseLabels(self, rawLabels):
         classifiedLabels = ['Non-compliance', 'Reduced compliance', 'Sufficient compliance', 'High compliance']
         labels = []
         for i in range(len(rawLabels)):

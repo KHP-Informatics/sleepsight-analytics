@@ -19,7 +19,6 @@ labelsNoMissingness = comp.dfCount.T['No Missingness']
 labelsSleep = comp.dfCount.T['sleep']
 labelsSymptom = comp.dfCount.T['symptom']
 
-
 infoTable = aggr.getPariticpantsInfo()
 labels = {'Passive data': labelsNoMissingness,
           'Active (Sleep Q.)': labelsSleep,
