@@ -62,5 +62,13 @@ class Aggregates:
         dfMedicationFormat = pd.DataFrame({hasDrug:hasDrugBool, 'No.of.Drugs':drugCount})
         return dfMedicationFormat
 
+    def exportLatexTable(self, data, name, save=True):
+        latextTable = data.to_latex()
+        if save:
+            path = self.pathPlot + '{}.tex'.format(name)
+            f = open(path, 'w')
+            f.write(latextTable)
+            f.close()
+
 
 

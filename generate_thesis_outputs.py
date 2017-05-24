@@ -2,9 +2,27 @@ from thesis import Aggregates, Compliance, InfoGainTable
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
+# Load Participants
+aggr = Aggregates('.pkl', path, plot_path)
+
+# Export Participant Info
+participantInfo = aggr.getPariticpantsInfo()
+features = [
+            'id',
+            'gender',
+            'age',
+            'durationIllness',
+            'PANSS.general',
+            'PANSS.negative',
+            'PANSS.positive',
+            'PANSS.total',
+            'Clozapine',
+            'No.of.Drugs'
+]
+participantInfoSelect = participantInfo[features]
+aggr.exportLatexTable(participantInfoSelect, 'DataParticipantInfo')
 
 # Compliance Figure
-aggr = Aggregates('.pkl', path, plot_path)
 comp = Compliance(aggr)
 comp.generateFigure(show=False, save=True)
 comp.exportLatexTable(save=True)
