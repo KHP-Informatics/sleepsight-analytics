@@ -1,2 +1,3 @@
 from preprocessing.imputation import KalmanImputation
-__all__ = ['imputation']
+from preprocessing.timeseries import TimeSeries
+__all__ = ['imputation', 'timeseries']

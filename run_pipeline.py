@@ -5,7 +5,7 @@ matplotlib.use('Agg')
 
 import sys
 from tools import Participant
-from preprocessing import KalmanImputation
+from preprocessing import KalmanImputation, TimeSeries
 from analysis import MissingnessDT, Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
@@ -13,7 +13,7 @@ from analysis import MissingnessDT, Periodicity, GpModel
 #ISS07 - implment Package loss in missingnes.py
 
 
-participantID = 10
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -28,6 +28,8 @@ p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
+p.pipelineStatus['stationarity'] = False
+p.saveSnapshot(path)
 print(p)
 
 print('\nBegin analysis pipeline:')
@@ -75,6 +77,22 @@ if not p.isPipelineTaskCompleted('imputation'):
 else:
     print('\nSkipping IMPUTATION - already completed.')
 
+# Task 'stationarity' (differencing)
+if not p.isPipelineTaskCompleted('stationarity'):
+    print('\nContinuing with STATIONARITY...')
+    for pSensor in p.passiveSensors:
+        if pSensor not in 'timestamp':
+            ts = TimeSeries(identifier=p.id, sensorName=pSensor)
+            ts.addObservtions(p.getPassiveDataColumn(pSensor))
+            ts.diff()
+
+            #p.setPassiveDataColumn(ki.imputedObservations, col=pSensor)
+    #p.updatePipelineStatusForTask('stationarity')
+    #p.saveSnapshot(path)
+else:
+    print('\nSkipping IMPUTATION - already completed.')
+
+exit()
 
 # Task 'periodicity' (Determining time window of repating sequences)
 if not p.isPipelineTaskCompleted('periodicity'):
