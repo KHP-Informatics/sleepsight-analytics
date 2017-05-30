@@ -5,7 +5,7 @@ matplotlib.use('Agg')
 
 import sys
 from tools import Participant
-from preprocessing import KalmanImputation, TimeSeries
+from preprocessing import KalmanImputation, Stationarity
 from analysis import MissingnessDT, Periodicity, GpModel
 
 # Overarching SleepSight pipeline script
@@ -77,21 +77,22 @@ if not p.isPipelineTaskCompleted('imputation'):
 else:
     print('\nSkipping IMPUTATION - already completed.')
 
+
 # Task 'stationarity' (differencing)
 if not p.isPipelineTaskCompleted('stationarity'):
     print('\nContinuing with STATIONARITY...')
-    for pSensor in p.passiveSensors:
-        if pSensor not in 'timestamp':
-            ts = TimeSeries(identifier=p.id, sensorName=pSensor)
-            ts.addObservtions(p.getPassiveDataColumn(pSensor))
-            ts.diff()
-
-            #p.setPassiveDataColumn(ki.imputedObservations, col=pSensor)
-    #p.updatePipelineStatusForTask('stationarity')
+    st = Stationarity(data=p.activeDataSymptom)
+    st.makeStationary(show=True)
+    p.stationarySymptomData = st.stationaryData
+    p.stationarySymptomStats = st.stationaryStats
+    st = Stationarity(data=p.passiveData)
+    st.makeStationary(show=True)
+    p.stationaryPassiveData = st.stationaryData
+    p.stationaryPassiveStats = st.stationaryStats
+    p.updatePipelineStatusForTask('stationarity')
     #p.saveSnapshot(path)
 else:
     print('\nSkipping IMPUTATION - already completed.')
-
 exit()
 
 # Task 'periodicity' (Determining time window of repating sequences)

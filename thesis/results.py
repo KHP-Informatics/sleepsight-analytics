@@ -163,3 +163,4 @@ class InfoGainTable:
         rendered += 'Entropies\n{}\n\n'.format(pd.DataFrame(self.entropies))
         rendered += 'Compliance Info Gain\n{}\n\n'.format(self.outputTable)
         return rendered
+

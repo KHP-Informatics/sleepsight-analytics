@@ -72,6 +72,30 @@ class Participant:
         self.__missingness = m
 
     @property
+    def stationaryPassiveData(self):
+        return self.__stationaryPassiveData
+
+    @stationaryPassiveData.setter
+    def stationaryPassiveData(self, sD):
+        self.__stationaryPassiveData = sD
+
+    @property
+    def stationarySymptomData(self):
+        return self.__stationaryActiveData
+
+    @stationarySymptomData.setter
+    def stationarySymptomData(self, sD):
+        self.__stationarySymptomData = sD
+
+    @property
+    def stationaryPassiveStats(self):
+        return self.__stationaryPassiveStats
+
+    @stationaryPassiveStats.setter
+    def stationaryPassiveStats(self, sS):
+        self.__stationaryPassiveStats = sS
+
+    @property
     def periodicity(self):
         return self.__periodicity
 
@@ -354,12 +378,15 @@ class Participant:
         return idxs
 
 
-    def getPassiveDataColumn(self, col=''):
+    def getPassiveDataColumn(self, col='', type='raw'):
         if col is '':
             print('[ERR] Supply one of your column names.\n      Choose from {}.'.format(str(self.passiveCols)))
             exit()
+        elif type is 'stationary':
+            return self.stationaryPassiveData[col]
         else:
             return self.passiveData[col]
+
 
     def setPassiveDataColumn(self, data, col=''):
         if col is '':
