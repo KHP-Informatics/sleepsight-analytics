@@ -446,14 +446,14 @@ class Participant:
                '>> passive data[{}] & active data[{}]\n    |\n>> trim[{}]\n    |\n' \
                '>> merging[{}] --------|\n    |                    |' \
                '\n>> imputation[{}]    missingness[{}]\n    |\n>> stationarity[{}]\n    |\n' \
-               '>> periodicity[{}]\n    |\n>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(type(self), self.id,
+               '>> periodicity[{}]\n    |\n>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
                                                     self.pipelineStatus['passive data'],
                                                     self.pipelineStatus['active data'],
                                                     self.pipelineStatus['trim data'],
                                                     self.pipelineStatus['merging data'],
-                                                    self.pipelineStatus['stationarity'],
                                                     self.pipelineStatus['imputation'],
                                                     self.pipelineStatus['missingness'],
+                                                    self.pipelineStatus['stationarity'],
                                                     self.pipelineStatus['periodicity'],
                                                     self.pipelineStatus['GP model gen.'],
                                                     self.pipelineStatus['anomaly detect.'],
