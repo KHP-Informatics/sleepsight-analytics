@@ -1,6 +1,7 @@
 # !/bin/python3
 import numpy as np
 from tools import QuickPlot
+from libs
 
 # testing signal's serial dependency
 # determining periodicity using ACF (auto-correlation function)
@@ -11,7 +12,7 @@ class Periodicity:
     @property
     def periodicity(self):
         periodicity = {
-            'scf': self.scf,
+            #'scf': self.scf,
             'acf': self.acf,
             'pcf': self.pcf
         }
@@ -43,13 +44,13 @@ class Periodicity:
             self.scf.append(np.corrcoef(y1, y2, ddof=0)[0,1])
 
     # auto-correlation function
-    def auto_corr(self):
+    def auto_corr(self, nMinutes=20160):
         acf_full =  np.correlate(self.observations, self.observations, mode='full')
         # 2nd half
         N = len(acf_full)
-        acf_half = acf_full[N // 2: (N // 2 + 20160)]
+        acf_half = acf_full[N // 2: (N // 2 + nMinutes)]
         # standardise
-        lengths = range((N // 2 + 20160), N // 2, -1)
+        lengths = range((N // 2 + nMinutes), N // 2, -1)
         acf_stand = acf_half / lengths
         # normalise
         acf_norm = acf_stand / acf_stand[0]

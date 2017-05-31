@@ -24,7 +24,7 @@ p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
-#p.pipelineStatus['non-parametric model prep'] = False
+p.pipelineStatus['periodicity'] = False
 #p.saveSnapshot(p.path)
 print(p)
 print('\nBegin analysis pipeline:')
@@ -99,15 +99,13 @@ if not p.isPipelineTaskCompleted('periodicity'):
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
             pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
-            pdy.addObservtions(p.getPassiveDataColumn(pSensor))
-            pdy.serial_corr(nSteps=100)
-            pdy.auto_corr()
-            pdy.pearson_corr()
-            pdy.plot('all', show=False, save=True)
-            periodicity[pSensor] = pdy.periodicity
+            pdy.addObservtions(p.getPassiveDataColumn(pSensor, type='stationary'))
+            pdy.auto_corr(nMinutes=40320)
+            pdy.plot('acf', show=False, save=True)
+            #periodicity[pSensor] = pdy.periodicity
     p.periodicity = periodicity
     p.updatePipelineStatusForTask('periodicity')
-    p.saveSnapshot(path)
+    #p.saveSnapshot(path)
 else:
     print('\nSkipping PERIODICITY - already completed.')
 
