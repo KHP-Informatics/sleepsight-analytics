@@ -7,27 +7,36 @@ import pandas as pd
 class ModelPrep:
 
     @property
-    def discretisedSymptomScoreTable(self):
-        return self.__discretisedSymptomScoreTable
+    def discretisedStationarySymptomScoreTable(self):
+        return self.__discretisedStationarySymptomScoreTable
 
-    @discretisedSymptomScoreTable.setter
-    def discretisedSymptomScoreTable(self, dSST):
-        self.__discretisedSymptomScoreTable = dSST
+    @discretisedStationarySymptomScoreTable.setter
+    def discretisedStationarySymptomScoreTable(self, dSST):
+        self.__discretisedStationarySymptomScoreTable = dSST
+
+    @property
+    def discretisedRawSymptomScoreTable(self):
+        return self.__discretisedRawSymptomScoreTable
+
+    @discretisedRawSymptomScoreTable.setter
+    def discretisedRawSymptomScoreTable(self, dSST):
+        self.__discretisedRawSymptomScoreTable = dSST
 
     def __init__(self):
         pass
 
-    def discretiseSymtomScore(self, symptom):
-        m = round(np.mean(symptom['total']), 1)
-        sd = round(np.std(symptom['total']), 2)
-        minorIdx = symptom['total'] >= (m + sd)
+    def discretiseSymtomScore(self, stationarySymptom, rawSymptom):
+        m = round(np.mean(stationarySymptom['total']), 1)
+        sd = round(np.std(stationarySymptom['total']), 2)
+        minorIdx = stationarySymptom['total'] >= (m + sd)
         labels = ['major'] * len(minorIdx)
         for i in np.where(minorIdx == True)[0]:
             labels[i] = 'minor'
         labelsTable = pd.DataFrame(labels)
         labelsTable.columns = ['label']
-        labelsTable.index = symptom.index
-        self.discretisedSymptomScoreTable = pd.concat([symptom, labelsTable], axis=1)
+        labelsTable.index = stationarySymptom.index
+        self.discretisedStationarySymptomScoreTable = pd.concat([stationarySymptom, labelsTable], axis=1)
+        self.discretisedRawScoreTable = pd.concat([rawSymptom, labelsTable], axis=1)
 
 
 class GpModel:

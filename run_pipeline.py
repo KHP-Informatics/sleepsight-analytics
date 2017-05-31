@@ -27,8 +27,8 @@ p.load()
 #p.pipelineStatus['non-parametric model prep'] = False
 #p.saveSnapshot(p.path)
 print(p)
-
 print('\nBegin analysis pipeline:')
+
 
 # Task: 'trim data' to Study Duration
 if not p.isPipelineTaskCompleted('trim data'):
@@ -111,17 +111,19 @@ if not p.isPipelineTaskCompleted('periodicity'):
 else:
     print('\nSkipping PERIODICITY - already completed.')
 
+
 # Task 'non-parametric modelprep'
 if not p.isPipelineTaskCompleted('non-parametric model prep'):
     print('\nContinuing with NON-PARAMETRIC MODEL PREP...')
     mp = ModelPrep()
-    mp.discretiseSymtomScore(p.stationarySymptomData)
-    p.activeDataSymptom = mp.discretisedSymptomScoreTable
-
+    mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
+    p.activeDataSymptom = mp.discretisedRawScoreTable
+    p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
+    #ToDo: feature generation ##########################################################################################
 else:
     print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
-
 exit()
+
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
