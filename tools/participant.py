@@ -81,7 +81,7 @@ class Participant:
 
     @property
     def stationarySymptomData(self):
-        return self.__stationaryActiveData
+        return self.__stationarySymptomData
 
     @stationarySymptomData.setter
     def stationarySymptomData(self, sD):
@@ -115,6 +115,7 @@ class Participant:
             'imputation': False,
             'stationarity': False,
             'periodicity': False,
+            'non-parametric model prep': False,
             'GP model gen.': False,
             'anomaly detect.': False,
             'association': False
@@ -446,7 +447,8 @@ class Participant:
                '>> passive data[{}] & active data[{}]\n    |\n>> trim[{}]\n    |\n' \
                '>> merging[{}] --------|\n    |                    |' \
                '\n>> imputation[{}]    missingness[{}]\n    |\n>> stationarity[{}]\n    |\n' \
-               '>> periodicity[{}]\n    |\n>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
+               '>> periodicity[{}]\n    |\n>> Non-parametric model prep [{}]\n    |\n' \
+                '>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
                                                     self.pipelineStatus['passive data'],
                                                     self.pipelineStatus['active data'],
                                                     self.pipelineStatus['trim data'],
@@ -455,6 +457,7 @@ class Participant:
                                                     self.pipelineStatus['missingness'],
                                                     self.pipelineStatus['stationarity'],
                                                     self.pipelineStatus['periodicity'],
+                                                    self.pipelineStatus['non-parametric model prep'],
                                                     self.pipelineStatus['GP model gen.'],
                                                     self.pipelineStatus['anomaly detect.'],
                                                     self.pipelineStatus['association']

@@ -2,6 +2,14 @@
 
 import datetime
 
+class ModelPrep:
+
+    def __init__(self):
+        pass
+
+    def discretiseSymtomScore(self, symptom):
+        pass
+
 class GpModel:
 
     def __init__(self, xFeatures, yFeature, dayDivisionHour=0):

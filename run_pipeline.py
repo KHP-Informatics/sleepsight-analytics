@@ -6,14 +6,10 @@ matplotlib.use('Agg')
 import sys
 from tools import Participant
 from preprocessing import KalmanImputation, Stationarity
-from analysis import MissingnessDT, Periodicity, GpModel
+from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep
 
 # Overarching SleepSight pipeline script
-
-#ISS07 - implment Package loss in missingnes.py
-
-
-participantID = 1
+participantID = 3
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -28,6 +24,8 @@ p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
+#p.pipelineStatus['non-parametric model prep'] = False
+#p.saveSnapshot(p.path)
 print(p)
 
 print('\nBegin analysis pipeline:')
@@ -112,6 +110,15 @@ if not p.isPipelineTaskCompleted('periodicity'):
     p.saveSnapshot(path)
 else:
     print('\nSkipping PERIODICITY - already completed.')
+
+# Task 'non-parametric modelprep'
+if not p.isPipelineTaskCompleted('non-parametric model prep'):
+    print('\nContinuing with NON-PARAMETRIC MODEL PREP...')
+    mp = ModelPrep()
+    mp.discretiseSymtomScore(p.stationarySymptomData)
+
+else:
+    print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
 
 exit()
 
