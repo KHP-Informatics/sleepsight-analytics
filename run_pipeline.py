@@ -13,7 +13,7 @@ from analysis import MissingnessDT, Periodicity, GpModel
 #ISS07 - implment Package loss in missingnes.py
 
 
-participantID = 3
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -91,7 +91,7 @@ if not p.isPipelineTaskCompleted('stationarity'):
     p.updatePipelineStatusForTask('stationarity')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping IMPUTATION - already completed.')
+    print('\nSkipping STATIONARITY - already completed.')
 
 
 # Task 'periodicity' (Determining time window of repating sequences)

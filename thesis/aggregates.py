@@ -48,6 +48,9 @@ class Aggregates:
         dfInfo = pd.concat((dfInfo, dfMedication), axis=1)
         return dfInfo
 
+    def getStationarityStats(self):
+        print(self.aggregates[0].stationaryPassiveStats)
+
     def formatMedication(self, arr, hasDrug='Clozapine'):
         hasDrugBool = np.zeros(len(arr), dtype=bool)
         drugCount = np.zeros(len(arr))

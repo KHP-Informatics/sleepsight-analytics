@@ -141,11 +141,11 @@ class InfoGainTable:
         tmpTable.index = self.formatFeatures(tmpTable.index)
         tmpTable = tmpTable.sort_index(level=1)
         tmpTable = tmpTable.sort_values([(orderedBy, self.normalisedColumns[0])], ascending=False)
-        latextTable = tmpTable.to_latex()
+        latexTable = tmpTable.to_latex()
         if save:
             path = plotPath + 'DataComplianceInfoGain.tex'
             f = open(path, 'w')
-            f.write(latextTable)
+            f.write(latexTable)
             f.close()
 
     def formatFeatures(self, features):
@@ -164,3 +164,80 @@ class InfoGainTable:
         rendered += 'Compliance Info Gain\n{}\n\n'.format(self.outputTable)
         return rendered
 
+class StationaryTable:
+
+    def __init__(self, aggr):
+        self.aggr = aggr
+        self.outputPath = aggr.pathPlot
+
+    def run(self):
+        statsExtract = []
+        for participant in self.aggr.aggregates:
+            statsExtractTmp = []
+            sleepsightId = 'Participant ' + str(participant.id)
+            stats = participant.stationaryPassiveStats
+            statsIrL = list(stats['I(r)'].values)
+            statsPL = list(stats['p-value'].values)
+            columns = list(stats['Feature'])
+            statsExtractTmp.append(statsIrL)
+            statsExtractTmp.append(statsPL)
+            statsExtractTmpTable = pd.DataFrame(statsExtractTmp, columns=columns)
+            statsExtractTmpTable.index = ['I(r)', 'p-value']
+            statsExtractTmpTableT = statsExtractTmpTable.T
+            decimals = pd.Series([0], index=['I(r)'])
+            statsExtractTmpTableT = statsExtractTmpTableT.round(decimals)
+            columnsMultiIndex = [(sleepsightId, 'I(r)'), (sleepsightId, 'p-value')]
+            statsExtractTmpTableT.columns = pd.MultiIndex.from_tuples(columnsMultiIndex)
+            statsExtract.append(statsExtractTmpTableT)
+        self.outputTable = pd.concat(statsExtract, axis=1)
+        self.outputTable = self.outputTable.dropna(axis=0)
+
+    def exportLatexTable(self, show=False, save=True):
+        formatedTable = self.formatIndex(self.outputTable)
+        latexTable = formatedTable.to_latex()
+        if show:
+            print(latexTable)
+        if save:
+            path = self.outputPath + 'DataStationarityStats.tex'
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
+
+    def formatIndex(self, table):
+        index = table.index
+        formatedIndex = []
+        for val in index:
+            if val not in ['FAM', 'LAM','VAM']:
+                val = val.replace('_', ' ')
+                val = val.capitalize()
+            formatedIndex.append(val)
+        table.index = formatedIndex
+        return table
+
+class DiscretisationTable:
+
+    def __init__(self, aggr):
+        self.aggr = aggr
+
+    def run(self):
+        sampleSet = []
+        id = 1
+        for aggregate in self.aggr.aggregates:
+            m = round(np.mean(aggregate.activeDataSymptom['total']), 1)
+            sd = round(np.std(aggregate.activeDataSymptom['total']), 2)
+            major = len(aggregate.activeDataSymptom[aggregate.activeDataSymptom['total'] < (m + sd)])
+            minor = len(aggregate.activeDataSymptom[aggregate.activeDataSymptom['total'] >= (m + sd)])
+            majorPercent = int(round((major / (major + minor)) * 100, 0))
+            minorPercent = int(round((minor / (major + minor)) * 100, 0))
+            sampleSet.append(
+                [str(id), str(m), str(sd), '{} ({})'.format(major, majorPercent), '{} ({})'.format(minor, minorPercent)])
+            id += 1
+        self.sampleTable = pd.DataFrame(sampleSet, columns=['Participant', 'Mean', 'SD', 'Major class (%)', 'Minor class (%)'])
+
+    def exportLatexTable(self, show=False, save=True):
+        latexTable = self.sampleTable.to_latex(index=False)
+        if save:
+            path = self.aggr.pathPlot + 'DataSampleSymptomClass.tex'
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
