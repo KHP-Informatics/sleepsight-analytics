@@ -13,11 +13,11 @@ class QuickPlot:
         self.colours = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 
     def singlePlotOfTypeLine(self, observation, title='Title', lineLabels=['Label'], ticks=[], tickLabels=[],
-                       text='', matrix=False, show=True, saveFigure=False, figsize=(9, 6)):
+                       text='', matrix=False, show=True, saveFigure=False, highlightPoints=[], figsize=(9, 6)):
         plt.close('all')
         plt.style.use('ggplot')
         fig, ax = plt.subplots(figsize=figsize)
-        self.plot_line(ax, observation, lineLabels=lineLabels, matrix=matrix)
+        self.plot_line(ax, observation, lineLabels=lineLabels, matrix=matrix, markers=highlightPoints)
 
         if text not in '':
             ax.text(0, max(observation), text,
@@ -39,14 +39,18 @@ class QuickPlot:
         if show:
             plt.show()
 
-    def plot_line(self, ax, line_data, matrix=False,lineLabels=['Label']):
+    def plot_line(self, ax, line_data, matrix=False,lineLabels=['Label'], markers=[]):
         N = int(len(list(line_data)))
         if matrix:
             linesN = len(line_data)
             for i in range(linesN):
-                ax.plot(np.arange(N), line_data[i], color=self.colours[i%linesN], label=lineLabels[0])
+                ax.plot(np.arange(N), line_data[i], color=self.colours[i%linesN], label=lineLabels[0], markevery=markers)
+                if len(markers) > 0:
+                    ax.plot(markers, line_data[i][markers], 'rd')
         else:
             ax.plot(np.arange(N), line_data, color='b', label=lineLabels[0])
+            if len(markers) > 0:
+                ax.plot(markers, line_data[markers], 'rd')
 
     def singlePlotOfTypeHeatmap(self, heatmap_data, title='Title', show=True, saveFigure=False, figsize=(9, 6)):
 

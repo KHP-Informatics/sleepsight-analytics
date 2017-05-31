@@ -1,7 +1,6 @@
 # !/bin/python3
 import numpy as np
-from tools import QuickPlot
-from libs
+from tools import QuickPlot, detect_peaks
 
 # testing signal's serial dependency
 # determining periodicity using ACF (auto-correlation function)
@@ -44,7 +43,7 @@ class Periodicity:
             self.scf.append(np.corrcoef(y1, y2, ddof=0)[0,1])
 
     # auto-correlation function
-    def auto_corr(self, nMinutes=20160):
+    def auto_corr(self, nMinutes=20160, detectPeaks=True):
         acf_full =  np.correlate(self.observations, self.observations, mode='full')
         # 2nd half
         N = len(acf_full)
@@ -54,6 +53,9 @@ class Periodicity:
         acf_stand = acf_half / lengths
         # normalise
         acf_norm = acf_stand / acf_stand[0]
+        if detectPeaks:
+            self.peaks = detect_peaks(acf_norm)
+            print(self.peaks)
         self.acf = acf_norm
 
     # pearson's correlation matrix
@@ -81,13 +83,18 @@ class Periodicity:
         qp = QuickPlot(path=self.path, identifier=self.id)
         qp.singlePlotOfTypeLine(self.scf, title=title, text=text, lineLabels=['SCF'], show=show, saveFigure=save)
 
-    def plotAcf(self, show=True, save=True):
+    def plotAcf(self, withPeak=True, show=True, save=True):
         nDays = (len(self.acf) // 1440) + 1
         ticks = np.arange(0, 1440*nDays, 1440)
         tickLabels = np.arange(0,nDays)
         title = 'Auto-correlation: {}'.format(self.sensorName)
         qp = QuickPlot(path=self.path, identifier=self.id)
-        qp.singlePlotOfTypeLine(self.acf, title=title, lineLabels=['ACF'], ticks=ticks, tickLabels=tickLabels, show=show, saveFigure=save)
+        if withPeak:
+            qp.singlePlotOfTypeLine(self.acf, title=title, lineLabels=['ACF'], ticks=ticks, tickLabels=tickLabels,
+                                    show=show, saveFigure=save, highlightPoints=self.peaks)
+        else:
+            qp.singlePlotOfTypeLine(self.acf, title=title, lineLabels=['ACF'], ticks=ticks, tickLabels=tickLabels,
+                                    show=show, saveFigure=save)
 
     def plotPcf(self, show=True, save=True):
         title = 'Pearson\'s correlation matrix: {}'.format(self.sensorName)
