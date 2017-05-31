@@ -116,6 +116,7 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     print('\nContinuing with NON-PARAMETRIC MODEL PREP...')
     mp = ModelPrep()
     mp.discretiseSymtomScore(p.stationarySymptomData)
+    p.activeDataSymptom = mp.discretisedSymptomScoreTable
 
 else:
     print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')

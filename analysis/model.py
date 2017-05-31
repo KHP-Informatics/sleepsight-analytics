@@ -1,14 +1,34 @@
 # !/bin/python3
 
 import datetime
+import numpy as np
+import pandas as pd
 
 class ModelPrep:
+
+    @property
+    def discretisedSymptomScoreTable(self):
+        return self.__discretisedSymptomScoreTable
+
+    @discretisedSymptomScoreTable.setter
+    def discretisedSymptomScoreTable(self, dSST):
+        self.__discretisedSymptomScoreTable = dSST
 
     def __init__(self):
         pass
 
     def discretiseSymtomScore(self, symptom):
-        pass
+        m = round(np.mean(symptom['total']), 1)
+        sd = round(np.std(symptom['total']), 2)
+        minorIdx = symptom['total'] >= (m + sd)
+        labels = ['major'] * len(minorIdx)
+        for i in np.where(minorIdx == True)[0]:
+            labels[i] = 'minor'
+        labelsTable = pd.DataFrame(labels)
+        labelsTable.columns = ['label']
+        labelsTable.index = symptom.index
+        self.discretisedSymptomScoreTable = pd.concat([symptom, labelsTable], axis=1)
+
 
 class GpModel:
 
