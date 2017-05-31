@@ -1,5 +1,6 @@
 # !/bin/python3
 import numpy as np
+import pandas as pd
 from tools import QuickPlot, detect_peaks
 
 # testing signal's serial dependency
@@ -54,8 +55,7 @@ class Periodicity:
         # normalise
         acf_norm = acf_stand / acf_stand[0]
         if detectPeaks:
-            self.peaks = detect_peaks(acf_norm)
-            print(self.peaks)
+            self.detectPeaks(acf_norm)
         self.acf = acf_norm
 
     # pearson's correlation matrix
@@ -65,6 +65,17 @@ class Periodicity:
         for i in range(n):
             observation_windows.append(self.observations[(i*lag):((i*lag)+lag)])
         self.pcf = np.corrcoef(observation_windows)
+
+    def detectPeaks(self, y):
+        self.peaks = detect_peaks(y, mpd=720, kpsh=True)
+        peaksMean, peaksStd = self.generatePeakStats(self.peaks)
+        self.peakStats = {'mean': peaksMean, 'std': peaksStd}
+
+    def generatePeakStats(self, peaks):
+        pDiff = pd.Series(peaks).diff()
+        mean = np.mean(pDiff)
+        std = np.std(pDiff)
+        return (mean, std)
 
     def plot(self, type='all', show=True, save=False):
         if type is 'scf' or type is 'all':

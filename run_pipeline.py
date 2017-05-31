@@ -96,16 +96,19 @@ else:
 if not p.isPipelineTaskCompleted('periodicity'):
     print('\nContinuing with PERIODICITY...')
     periodicity = {}
+    acfPeakStats = {}
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
             pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
             pdy.addObservtions(p.getPassiveDataColumn(pSensor, type='stationary'))
             pdy.auto_corr(nMinutes=40320)
             pdy.plot('acf', show=False, save=True)
-            #periodicity[pSensor] = pdy.periodicity
+            acfPeakStats[pSensor] = pdy.peakStats
+            periodicity[pSensor] = pdy.periodicity
     p.periodicity = periodicity
+    p.acfPeakStats = acfPeakStats
     p.updatePipelineStatusForTask('periodicity')
-    #p.saveSnapshot(path)
+    p.saveSnapshot(path)
 else:
     print('\nSkipping PERIODICITY - already completed.')
 

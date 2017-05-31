@@ -103,6 +103,14 @@ class Participant:
     def periodicity(self, p):
         self.__periodicity = p
 
+    @property
+    def acfPeakStats(self):
+        return self.__acfPeakStats
+
+    @acfPeakStats.setter
+    def acfPeakStats(self, aps):
+        self.__acfPeakStats = aps
+
     def __init__(self, id, path=''):
         self.id = self.formatID(id)
         self.path = path
