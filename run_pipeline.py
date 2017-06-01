@@ -25,8 +25,11 @@ p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
 p.pipelineStatus['periodicity'] = False
-#p.saveSnapshot(p.path)
+p.pipelineStatus['non-parametric model prep'] = False
+p.pipelineStatus['delay determination'] = False
+p.saveSnapshot(p.path)
 print(p)
+
 print('\nBegin analysis pipeline:')
 
 
@@ -97,6 +100,7 @@ if not p.isPipelineTaskCompleted('periodicity'):
     print('\nContinuing with PERIODICITY...')
     periodicity = {}
     acfPeakStats = {}
+    ccfPeakStats = {}
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
             pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
@@ -113,6 +117,7 @@ else:
     print('\nSkipping PERIODICITY - already completed.')
 
 
+######## NON PARAMETRIC #################################################
 # Task 'non-parametric modelprep'
 if not p.isPipelineTaskCompleted('non-parametric model prep'):
     print('\nContinuing with NON-PARAMETRIC MODEL PREP...')
@@ -120,9 +125,17 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
-    #ToDo: feature generation ##########################################################################################
+    #ToDo: feature generation
 else:
     print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
+
+
+# Task 'delay determination' (determine delay between active and passive data)
+if not p.isPipelineTaskCompleted('delay determination'):
+    print('\nContinuing with DELAY DETERMINATION...')
+    #ToDo: delay determination
+else:
+    print('\nSkipping DELAY DETERMINATION - already completed.')
 exit()
 
 

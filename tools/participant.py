@@ -124,6 +124,7 @@ class Participant:
             'stationarity': False,
             'periodicity': False,
             'non-parametric model prep': False,
+            'delay determination': False,
             'GP model gen.': False,
             'anomaly detect.': False,
             'association': False
