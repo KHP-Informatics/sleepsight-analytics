@@ -14,7 +14,7 @@ class Periodicity:
         periodicity = {
             #'scf': self.scf,
             'acf': self.acf,
-            'pcf': self.pcf
+            #'pcf': self.pcf
         }
         return periodicity
 
