@@ -23,12 +23,14 @@ if len(args) > 1:
 p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
+p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 #p.pipelineStatus['periodicity'] = False
 #p.pipelineStatus['non-parametric model prep'] = False
 #p.pipelineStatus['delay determination'] = False
 #p.saveSnapshot(p.path)
-print(p)
+#print(p)
+exit()
 
 print('\nBegin analysis pipeline:')
 

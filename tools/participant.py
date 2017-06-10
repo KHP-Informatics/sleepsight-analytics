@@ -12,6 +12,14 @@ from HipDynamics import LookUpTable
 class Participant:
 
     @property
+    def info(self):
+        return self.__info
+
+    @info.setter
+    def info(self, info):
+        self.__info = info
+
+    @property
     def activeSensingFilenameSelector(self):
         return self.__activeSensingFilenameSelector
 
@@ -26,6 +34,14 @@ class Participant:
     @metaDataFileName.setter
     def metaDataFileName(self, filename):
         self.__metaDataFileName = filename
+
+    @property
+    def sleepSummaryFileName(self):
+        return self.__sleepSummaryFileName
+
+    @sleepSummaryFileName.setter
+    def sleepSummaryFileName(self, filename):
+        self.__sleepSummaryFileName = filename
 
     @property
     def passiveData(self):
@@ -130,6 +146,7 @@ class Participant:
             'association': False
         }
         self.metaDataFileName = ''
+        self.sleepSummaryFileName = ''
         self.info = dict()
 
 
@@ -149,8 +166,14 @@ class Participant:
             self.loadActiveData(activeSensFiles)
             if self.metaDataFileName is not '':
                 self.loadMetaData(self.metaDataFileName)
+            if self.sleepSummaryFileName is not '':
+                self.loadSleepSummaryData(self.sleepSummaryFileName)
             self.saveSnapshot()
         else:
+            ### Todo: remove
+            if self.sleepSummaryFileName is not '':
+                self.loadSleepSummaryData(self.sleepSummaryFileName)
+            ##
             self.loadSnapshot()
 
     def splitFilesIntoActiveAndPassive(self, files):
@@ -161,7 +184,7 @@ class Participant:
                 active.append(file)
             else:
                 #reserved for meta data
-                if 'meta' not in file:
+                if 'meta' not in file and 'sleep_summary' not in file:
                     passive.append(file)
         return (active, passive)
 
@@ -349,10 +372,18 @@ class Participant:
         if selector == '':
             selector = self.id
         path = self.path + filename
-        print(path)
         with open(path) as data_file:
             data = json.load(data_file)
         self.info = data[selector]
+
+    def loadSleepSummaryData(self, filename):
+        path = self.path + filename
+        data = np.genfromtxt(path, delimiter=',', dtype="U")
+        dfData = pd.DataFrame(data[1:len(data)], columns=data[0])
+        idSelector = 'Sleepsight{}'.format(self.id)
+        dfId = dfData.loc[dfData['name'] == idSelector]
+        self.sleepSummary = dfId.loc[dfId['isMainSleep'] == 'TRUE']
+
 
     def trimData(self, startDate, endDate='', duration=0):
         start, end = self.determineStartAndEndDates(startDate, endDate, duration)
@@ -379,14 +410,13 @@ class Participant:
                 idxs.append(i)
         return idxs
 
-    def getTrimmedActiveIndecies(self, start, end):
+    def getTrimmedActiveIndecies(self, start, end, dateFormat='%Y-%m-%d %H:%M'):
         idxs = []
         for i in range(0, len(self.activeDataSymptom)):
-            dateOfInterest = datetime.datetime.strptime(self.activeDataSymptom['datetime'][i], '%Y-%m-%d %H:%M')
+            dateOfInterest = datetime.datetime.strptime(self.activeDataSymptom['datetime'][i], dateFormat)
             if dateOfInterest < start or end < dateOfInterest:
                 idxs.append(i)
         return idxs
-
 
     def getPassiveDataColumn(self, col='', type='raw'):
         if col is '':
