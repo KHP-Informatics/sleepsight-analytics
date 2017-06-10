@@ -1,10 +1,17 @@
-from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable
+from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable, PeriodictyTable
 
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 # Load Participants
 aggr = Aggregates('.pkl', path, plot_path)
+
+# Export Periodicity tables
+pt = PeriodictyTable(aggr)
+pt.run()
+pt.exportLatexTable(summary=False)
+pt.exportLatexTable(summary=True)
+
 
 # Export Participant Info
 participantInfo = aggr.getPariticpantsInfo()
@@ -62,4 +69,6 @@ stTable.exportLatexTable(show=False, save=True)
 disTable = DiscretisationTable(aggr)
 disTable.run()
 disTable.exportLatexTable(show=False, save=True)
+
+
 

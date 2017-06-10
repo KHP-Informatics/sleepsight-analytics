@@ -24,10 +24,10 @@ p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.load()
-p.pipelineStatus['periodicity'] = False
-p.pipelineStatus['non-parametric model prep'] = False
-p.pipelineStatus['delay determination'] = False
-p.saveSnapshot(p.path)
+#p.pipelineStatus['periodicity'] = False
+#p.pipelineStatus['non-parametric model prep'] = False
+#p.pipelineStatus['delay determination'] = False
+#p.saveSnapshot(p.path)
 print(p)
 
 print('\nBegin analysis pipeline:')

@@ -193,7 +193,8 @@ class StationaryTable:
         self.outputTable = self.outputTable.dropna(axis=0)
 
     def exportLatexTable(self, show=False, save=True):
-        formatedTable = self.formatIndex(self.outputTable)
+        formatedTable = self.outputTable
+        formatedTable.index = self.formatIndex(self.outputTable.index)
         latexTable = formatedTable.to_latex()
         if show:
             print(latexTable)
@@ -203,16 +204,14 @@ class StationaryTable:
             f.write(latexTable)
             f.close()
 
-    def formatIndex(self, table):
-        index = table.index
+    def formatIndex(self, index):
         formatedIndex = []
         for val in index:
             if val not in ['FAM', 'LAM','VAM']:
                 val = val.replace('_', ' ')
                 val = val.capitalize()
             formatedIndex.append(val)
-        table.index = formatedIndex
-        return table
+        return formatedIndex
 
 class DiscretisationTable:
 
@@ -241,3 +240,63 @@ class DiscretisationTable:
             f = open(path, 'w')
             f.write(latexTable)
             f.close()
+
+class PeriodictyTable:
+
+    def __init__(self, aggr):
+        self.aggr = aggr
+
+    def run(self):
+        periodicityStats = []
+        periodicityStatsIndex = []
+        acfPeakStatsCols = self.aggr.aggregates[0].acfPeakStats.keys()
+        acfPeakStatsCols = self.removeCol(acfPeakStatsCols, 'intra_calories')
+        for participant in self.aggr.aggregates:
+            participantId = participant.id
+            pFormat = []
+            pMean = []
+            for key in acfPeakStatsCols:
+                mean = np.round(participant.acfPeakStats[key]['mean']/60, 1)
+                std = np.round(participant.acfPeakStats[key]['std']/60, 2)
+                pFormat.append('{} ({})'.format(mean, std))
+                pMean.append(mean)
+            pMeanTotal = '{} ({})'.format(np.mean(pMean).round(1), np.std(pMean).round(2))
+            pFormat.append(pMeanTotal)
+            periodicityStats.append(pFormat)
+            periodicityStatsIndex.append(participantId)
+        cols = acfPeakStatsCols + ['Period µ']
+        self.outputTable = pd.DataFrame(periodicityStats, columns=self.formatIndex(cols))
+        self.outputTable.index = periodicityStatsIndex
+
+    def removeCol(self, l, v):
+        ll = list(l)
+        vIdxs = [i for i in range(len(ll)) if v in ll[i]]
+        [ll.pop(vIdx) for vIdx in vIdxs]
+        return ll
+
+    def formatIndex(self, index):
+        formatedIndex = []
+        for val in index:
+            if val not in ['FAM', 'LAM','VAM']:
+                val = val.replace('_', ' ')
+                val = val.capitalize()
+            val = '{} (SD)'.format(val)
+            formatedIndex.append(val)
+        return formatedIndex
+
+    def exportLatexTable(self, show=False, save=True, summary=False):
+        latexTable = self.outputTable.to_latex(index=False)
+        fileName = 'DataPeriodicityStats.tex'
+        if summary:
+            latexTable = self.outputTable[['Period µ (SD)']].to_latex(index=True)
+            fileName = 'DataPeriodicityStatsSummary.tex'
+        if show:
+            print(latexTable)
+        if save:
+            path = self.aggr.pathPlot + fileName
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
+
+
+
