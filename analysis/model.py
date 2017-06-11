@@ -1,11 +1,8 @@
 # !/bin/python3
-from math import *
 import sys
 import datetime
-from dtw import dtw
 import numpy as np
 import pandas as pd
-from numpy.linalg import norm
 from pyentrp import entropy as ent
 
 class ModelPrep:
