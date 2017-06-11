@@ -6,10 +6,10 @@ matplotlib.use('Agg')
 import sys
 from tools import Participant
 from preprocessing import KalmanImputation, Stationarity
-from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep
+from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -29,8 +29,8 @@ p.load()
 #p.pipelineStatus['non-parametric model prep'] = False
 #p.pipelineStatus['delay determination'] = False
 #p.saveSnapshot(p.path)
-#print(p)
-exit()
+print(p)
+
 
 print('\nBegin analysis pipeline:')
 
@@ -128,6 +128,10 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
     #ToDo: feature generation
+    npm = NonParaModel(yFeature='total', dayDivisionHour=12)
+    npm.submitData(participant=p)
+    npm.constructModel()
+    print(npm.featuresSleep)
 else:
     print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
 
@@ -138,8 +142,8 @@ if not p.isPipelineTaskCompleted('delay determination'):
     #ToDo: delay determination
 else:
     print('\nSkipping DELAY DETERMINATION - already completed.')
-exit()
 
+exit()
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
@@ -147,5 +151,6 @@ if not p.isPipelineTaskCompleted('GP model gen.'):
     gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12)
     gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
     gpm.createIndexTable()
+    print(gpm.indexDict)
 else:
     print('\nSkipping GP-MODEL GEN - already completed.')

@@ -170,10 +170,6 @@ class Participant:
                 self.loadSleepSummaryData(self.sleepSummaryFileName)
             self.saveSnapshot()
         else:
-            ### Todo: remove
-            if self.sleepSummaryFileName is not '':
-                self.loadSleepSummaryData(self.sleepSummaryFileName)
-            ##
             self.loadSnapshot()
 
     def splitFilesIntoActiveAndPassive(self, files):
