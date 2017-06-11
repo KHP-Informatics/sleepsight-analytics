@@ -1,8 +1,12 @@
 # !/bin/python3
-
+from math import *
+import sys
 import datetime
+from dtw import dtw
 import numpy as np
 import pandas as pd
+from numpy.linalg import norm
+from pyentrp import entropy as ent
 
 class ModelPrep:
 
@@ -57,12 +61,12 @@ class NonParaModel:
         self.sleepFeaturesQ = ['sleepQuality']
         self.restActivtyFeatures = ['L5', 'M10', 'RA', 'IV', 'IS']
 
-    def submitData(self, participant):
+    def submitData(self, participant, xFeatures):
         self.activeDataSy = participant.activeDataSymptom
         self.activeDataSl = participant.activeDataSleep
         self.sleepSummary = participant.sleepSummary
         self.yData = self.activeDataSy[['datetime', self.yFeature]]
-        self.xFeatures = participant.passiveSensors
+        self.xFeatures = xFeatures
         self.xData = participant.passiveData[(['timestamp'] + self.xFeatures)]
         self.xDataNorm = self.xData[self.xFeatures] / self.xData[self.xFeatures].max()
 
@@ -70,6 +74,8 @@ class NonParaModel:
         self.createIndexTable()
         dfSleep = self.extractSleepFeatures()
         dfRestActivity = self.extractRestActivityFeatures(leadFeature='intra_steps')
+        dfDisorganisation = self.extractDisorganisationFeatures()
+        self.features = pd.concat([dfRestActivity, dfDisorganisation, dfSleep], axis=1)
 
     def createIndexTable(self):
         self.indexDict = []
@@ -124,8 +130,9 @@ class NonParaModel:
             features = featureSleepSum + featureSleepQue
             featureSleepTmp.append(features)
             indexDates.append(index['dateStart'])
-        self.featuresSleep = pd.DataFrame(featureSleepTmp, columns=cols)
-        self.featuresSleep.index = indexDates
+        featuresSleep = pd.DataFrame(featureSleepTmp, columns=cols)
+        featuresSleep.index = indexDates
+        return featuresSleep
 
     def extractSleepSummarySample(self, date):
         index = self.sleepSummary.index
@@ -159,22 +166,9 @@ class NonParaModel:
             RATmp = list(L5) + list(M10) + RA + IV + IS
             featureRATmp.append(RATmp)
             indexDates.append(index['dateStart'])
-        self.featuresRestActivity = pd.DataFrame(featureRATmp, columns=cols)
-        self.featuresRestActivity.index = indexDates
-        print(self.featuresRestActivity)
-
-    def formatColumns(self, features, prefixes):
-        cols = []
-        for prefix in prefixes:
-            tmpF = []
-            for i in range(0, len(features)):
-                f = features[i].replace('_', ' ')
-                if f not in ['LAM', 'FAM', 'VAM']:
-                    f = f.capitalize()
-                tmpF.append('{} {}'.format(prefix, f))
-            cols = cols + tmpF
-        return cols
-
+        featuresRestActivity = pd.DataFrame(featureRATmp, columns=cols)
+        featuresRestActivity.index = indexDates
+        return featuresRestActivity
 
     def determineL5M10Indexes(self, index, leadFeature):
         rawSamplePeriod = self.xData.loc[index['indexStart']:index['indexEnd']]
@@ -218,7 +212,85 @@ class NonParaModel:
         IS = nominatorP / denominatorN
         return IS
 
+    def extractDisorganisationFeatures(self):
+        disorgFeaturesTmp = []
+        indexDates = []
+        cols = self.formatColumns(self.xFeatures, prefixes=['MSE', 'DWT'])
+        for index in self.indexDict:
+            MSE = self.computeMSE(index)
+            DTWDist = self.computeDTW(index)
+            disorgFeaturesTmp.append((MSE + DTWDist))
+            indexDates.append(index['dateStart'])
+        disorganisationFeatures = pd.DataFrame(disorgFeaturesTmp, columns=cols)
+        disorganisationFeatures.index = indexDates
+        return disorganisationFeatures
 
+    def computeMSE(self, index, m_length=20):
+        indexStart = index['indexStart']
+        indexEnd = index['indexEnd']
+        dfData = self.xData.loc[indexStart:indexEnd]
+        MSE_means = []
+        for feature in self.xFeatures:
+            ts = list(dfData[feature])
+            tsStd = np.std(ts)
+            MSEs = ent.multiscale_entropy(ts, sample_length=m_length, tolerance=0.2*tsStd)
+            MSE_means.append(np.mean(MSEs))
+        return MSE_means
+
+    def computeDTW(self, index):
+        indexStart = index['indexStart']
+        indexEnd = index['indexEnd']
+        indexPrev = indexStart - 1440
+        dfData = self.xData.loc[indexStart:indexEnd]
+        dfDataPrev = self.xData.loc[indexPrev:indexStart]
+        dtwDist = []
+        for feature in self.xFeatures:
+            ts = np.array(list(dfData[feature]))
+            tsPrev = np.array(list(dfDataPrev[feature]))
+            dist, path = self.DTW(ts, tsPrev)
+            dtwDist.append(dist)
+        return dtwDist
+
+    def DTW(self, A, B,  window=sys.maxsize, d=lambda x, y: abs(x - y)):
+        # create the cost matrix
+        M, N = len(A), len(B)
+        cost = sys.maxsize * np.ones((M, N))
+
+        # initialize the first row and column
+        cost[0, 0] = d(A[0], B[0])
+        for i in range(1, M):
+            cost[i, 0] = cost[i - 1, 0] + d(A[i], B[0])
+
+        for j in range(1, N):
+            cost[0, j] = cost[0, j - 1] + d(A[0], B[j])
+        # fill in the rest of the matrix
+        for i in range(1, M):
+            for j in range(max(1, i - window), min(N, i + window)):
+                choices = cost[i - 1, j - 1], cost[i, j - 1], cost[i - 1, j]
+                cost[i, j] = min(choices) + d(A[i], B[j])
+
+        # find the optimal path
+        n, m = N - 1, M - 1
+        path = []
+
+        while (m, n) != (0, 0):
+            path.append((m, n))
+            m, n = min((m - 1, n), (m, n - 1), (m - 1, n - 1), key=lambda x: cost[x[0], x[1]])
+
+        path.append((0, 0))
+        return cost[-1, -1], path
+
+    def formatColumns(self, features, prefixes):
+        cols = []
+        for prefix in prefixes:
+            tmpF = []
+            for i in range(0, len(features)):
+                f = features[i].replace('_', ' ')
+                if f not in ['LAM', 'FAM', 'VAM']:
+                    f = f.capitalize()
+                tmpF.append('{} {}'.format(prefix, f))
+            cols = cols + tmpF
+        return cols
 
 
 class GpModel:

@@ -127,11 +127,12 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
-    #ToDo: feature generation
     npm = NonParaModel(yFeature='total', dayDivisionHour=12)
-    npm.submitData(participant=p)
+    npm.submitData(participant=p, xFeatures=p.passiveSensors)
     npm.constructModel()
-    print(npm.featuresSleep)
+    p.nonParametricFeatures = npm.features
+    p.updatePipelineStatusForTask('non-parametric model prep')
+    p.saveSnapshot(path)
 else:
     print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
 

@@ -127,6 +127,14 @@ class Participant:
     def acfPeakStats(self, aps):
         self.__acfPeakStats = aps
 
+    @property
+    def nonParametricFeatures(self):
+        return self.__nonParametricFeatures
+
+    @nonParametricFeatures.setter
+    def nonParametricFeatures(self, npf):
+        self.__nonParametricFeatures = npf
+
     def __init__(self, id, path=''):
         self.id = self.formatID(id)
         self.path = path
@@ -171,6 +179,9 @@ class Participant:
             self.saveSnapshot()
         else:
             self.loadSnapshot()
+            #ToDo remove!
+            if self.sleepSummaryFileName is not '':
+                self.loadSleepSummaryData(self.sleepSummaryFileName)
 
     def splitFilesIntoActiveAndPassive(self, files):
         active = []
