@@ -6,10 +6,11 @@ matplotlib.use('Agg')
 import sys
 from tools import Participant
 from preprocessing import KalmanImputation, Stationarity
+import pandas as pd
 from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 
@@ -102,12 +103,11 @@ if not p.isPipelineTaskCompleted('periodicity'):
     print('\nContinuing with PERIODICITY...')
     periodicity = {}
     acfPeakStats = {}
-    ccfPeakStats = {}
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
             pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
             pdy.addObservtions(p.getPassiveDataColumn(pSensor, type='stationary'))
-            pdy.auto_corr(nMinutes=40320)
+            pdy.auto_corr(nMinutes=(1440 * 28))
             pdy.plot('acf', show=False, save=True)
             acfPeakStats[pSensor] = pdy.peakStats
             periodicity[pSensor] = pdy.periodicity
@@ -140,7 +140,18 @@ else:
 # Task 'delay determination' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('delay determination'):
     print('\nContinuing with DELAY DETERMINATION...')
-    #ToDo: delay determination
+    delayCCF = []
+    features = p.nonParametricFeatures.columns
+    for feature in features:
+        pdy = Periodicity(identifier=p.id, sensorName=feature, path=plot_path)
+        pdy.addObservtions(p.nonParametricFeatures[feature])
+        delay = pdy.cross_cor(targetObservation=p.activeDataSymptom['total'], lag=14)
+        delayCCF.append(delay)
+    dfDelay = pd.DataFrame(delayCCF, columns=['Participant {}'.format(p.id)])
+    dfDelay.index = features
+    p.featuresDelay = dfDelay
+    p.updatePipelineStatusForTask('delay determination')
+    p.saveSnapshot(path)
 else:
     print('\nSkipping DELAY DETERMINATION - already completed.')
 

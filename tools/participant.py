@@ -491,6 +491,7 @@ class Participant:
                '>> merging[{}] --------|\n    |                    |' \
                '\n>> imputation[{}]    missingness[{}]\n    |\n>> stationarity[{}]\n    |\n' \
                '>> periodicity[{}]\n    |\n>> Non-parametric model prep [{}]\n    |\n' \
+                '>> Delay determination [{}]\n    |\n' \
                 '>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
                                                     self.pipelineStatus['passive data'],
                                                     self.pipelineStatus['active data'],
@@ -501,6 +502,7 @@ class Participant:
                                                     self.pipelineStatus['stationarity'],
                                                     self.pipelineStatus['periodicity'],
                                                     self.pipelineStatus['non-parametric model prep'],
+                                                    self.pipelineStatus['delay determination'],
                                                     self.pipelineStatus['GP model gen.'],
                                                     self.pipelineStatus['anomaly detect.'],
                                                     self.pipelineStatus['association']

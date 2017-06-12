@@ -23,53 +23,84 @@ class Periodicity:
         self.sensorName = sensorName
         self.path = path
         self.id = identifier
+        self.observationValid = True
 
     def addObservtions(self, observations):
-        obs = np.array(observations, dtype='U32')
-        obs_missing = np.where(obs == '-')
-        obs[obs_missing] = 999999
-        obs_masked = np.ma.masked_array(obs, dtype='float32')
-        obs_masked[obs_missing] = np.ma.masked
-        self.observations = obs_masked
+        try:
+            obs = np.array(observations, dtype='U64')
+            obs_missing = np.where(obs == '-')
+            obs[obs_missing] = 999999
+            obs_masked = np.ma.masked_array(obs, dtype='float64')
+            obs_masked[obs_missing] = np.ma.masked
+            self.observations = obs_masked
+        except ValueError:
+            self.observationValid = False
 
         # serial-correlation function
 
     def serial_corr(self, step=1, nSteps=10):
-        self.scf = []
-        n = len(self.observations)
-        for i in range(int(nSteps/step)):
-            lag = step*i
-            y1 = self.observations[lag:]
-            y2 = self.observations[:n - lag]
-            self.scf.append(np.corrcoef(y1, y2, ddof=0)[0,1])
+        if self.observationValid:
+            self.scf = []
+            n = len(self.observations)
+            for i in range(int(nSteps/step)):
+                lag = step*i
+                y1 = self.observations[lag:]
+                y2 = self.observations[:n - lag]
+                self.scf.append(np.corrcoef(y1, y2, ddof=0)[0,1])
 
     # auto-correlation function
     def auto_corr(self, nMinutes=20160, detectPeaks=True):
-        acf_full =  np.correlate(self.observations, self.observations, mode='full')
-        # 2nd half
-        N = len(acf_full)
-        acf_half = acf_full[N // 2: (N // 2 + nMinutes)]
-        # standardise
-        lengths = range((N // 2 + nMinutes), N // 2, -1)
-        acf_stand = acf_half / lengths
-        # normalise
-        acf_norm = acf_stand / acf_stand[0]
-        if detectPeaks:
-            self.detectPeaks(acf_norm)
-        self.acf = acf_norm
+        if self.observationValid:
+            acf_full =  np.correlate(self.observations, self.observations, mode='full')
+            # 2nd half
+            N = len(acf_full)
+            acf_half = acf_full[N // 2: (N // 2 + nMinutes)]
+            # standardise
+            lengths = range((N // 2 + nMinutes), N // 2, -1)
+            acf_stand = acf_half / lengths
+            # normalise
+            acf_norm = acf_stand / acf_stand[0]
+            if detectPeaks:
+                self.detectPeaks(acf_norm)
+            self.acf = acf_norm
+
+    def cross_cor(self, targetObservation, lag):
+        if self.observationValid:
+            x = list(self.observations)
+            y = list(targetObservation)
+            windowLength = len(x) - 2*lag
+            if windowLength >= 7:
+                xWinIdx = list(range(lag, (lag+windowLength)))
+                featureCcf = []
+                for i in range(0, 2*lag):
+                    yWinIdx = list(range(i, (i + windowLength)))
+                    xOfInterest = [x[idx] for idx in xWinIdx]
+                    yOfInterest = [y[idx] for idx in yWinIdx]
+                    cross = np.correlate(xOfInterest, yOfInterest)
+                    featureCcf.append(cross[0])
+                maxIdx = np.where(featureCcf == np.max(featureCcf))
+                if len(maxIdx[0]) > 0:
+                    delay = maxIdx[0][0] - lag
+                    return delay
+                return np.nan
+
+            else:
+                print('[WARN] No cross validation possible. Choose a smaller lag to evaluate')
 
     # pearson's correlation matrix
     def pearson_corr(self, lag=1440):
-        n = int(len(self.observations)/lag) - 1
-        observation_windows = []
-        for i in range(n):
-            observation_windows.append(self.observations[(i*lag):((i*lag)+lag)])
-        self.pcf = np.corrcoef(observation_windows)
+        if self.observationValid:
+            n = int(len(self.observations)/lag) - 1
+            observation_windows = []
+            for i in range(n):
+                observation_windows.append(self.observations[(i*lag):((i*lag)+lag)])
+            self.pcf = np.corrcoef(observation_windows)
 
     def detectPeaks(self, y):
-        self.peaks = detect_peaks(y, mpd=720, kpsh=True)
-        peaksMean, peaksStd = self.generatePeakStats(self.peaks)
-        self.peakStats = {'mean': peaksMean, 'std': peaksStd}
+        if self.observationValid:
+            self.peaks = detect_peaks(y, mpd=720, kpsh=True)
+            peaksMean, peaksStd = self.generatePeakStats(self.peaks)
+            self.peakStats = {'mean': peaksMean, 'std': peaksStd}
 
     def generatePeakStats(self, peaks):
         pDiff = pd.Series(peaks).diff()
@@ -78,14 +109,15 @@ class Periodicity:
         return (mean, std)
 
     def plot(self, type='all', show=True, save=False):
-        if type is 'scf' or type is 'all':
-            self.plotScf(show=show, save=save)
-        if type is 'acf' or type is 'all':
-            self.plotAcf(show=show, save=save)
-        if type is 'pcf' or type is 'all':
-            self.plotPcf(show=show, save=save)
-        if type not in ['all', 'scf', 'acf', 'pcf']:
-            print('[PERIODICITY] WARN: Did not plot. Choose from "all", "scf", "acf" or "pcf".')
+        if self.observationValid:
+            if type is 'scf' or type is 'all':
+                self.plotScf(show=show, save=save)
+            if type is 'acf' or type is 'all':
+                self.plotAcf(show=show, save=save)
+            if type is 'pcf' or type is 'all':
+                self.plotPcf(show=show, save=save)
+            if type not in ['all', 'scf', 'acf', 'pcf']:
+                print('[PERIODICITY] WARN: Did not plot. Choose from "all", "scf", "acf" or "pcf".')
 
     def plotScf(self, show=True, save=False):
         scfBetaOne = self.scf[1]
