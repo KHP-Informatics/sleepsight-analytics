@@ -69,16 +69,21 @@ class NonParaModel:
         self.enrolmentDate = datetime.datetime.strptime(participant.info['startDate'], '%d/%m/%Y')
 
     def constructModel(self):
+        print('[STATUS] Creating index table.')
         self.createIndexTable()
-        dfSleep = self.extractSleepFeatures()
+        print('[STATUS] Extracting rest-activity features.')
         dfRestActivity = self.extractRestActivityFeatures(leadFeature='intra_steps')
+        print('[STATUS] Extracting disorganisation features.')
         dfDisorganisation = self.extractDisorganisationFeatures()
+        print('[STATUS] Extracting sleep features.')
+        dfSleep = self.extractSleepFeatures()
         self.features = pd.concat([dfRestActivity, dfDisorganisation, dfSleep], axis=1)
 
     def createIndexTable(self):
         self.indexDict = []
         self.extractDateIdxsFromYData()
         self.extractDateIdxsFromXDataBasedOnY()
+        self.removeIncompleteIndexs()
 
     def extractDateIdxsFromYData(self):
         for i in range(len(self.yData)):
@@ -112,12 +117,21 @@ class NonParaModel:
                 idxStart = i
             if dateXData <= dateEnd:
                 idxEnd = i
-            if dateXData == dateEnd or i == (len(self.xData) - 1):
+            if dateXData >= dateEnd or i == (len(self.xData) - 1):
                 self.indexDict[currentTableIndex]['indexStart'] = idxStart
                 self.indexDict[currentTableIndex]['indexEnd'] = idxEnd
                 currentTableIndex += 1
                 if currentTableIndex >= len(self.indexDict):
                     break
+    def removeIncompleteIndexs(self):
+        newIndexDict = []
+        for index in self.indexDict:
+            try:
+                test = index['indexStart']
+                newIndexDict.append(index)
+            except KeyError:
+                print('[WARN] Removing index {}, due to missing \'indexStart\'.'.format(index['index']))
+        self.indexDict = newIndexDict
 
     def extractSleepFeatures(self):
         featureSleepTmp = []
