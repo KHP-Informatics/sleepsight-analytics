@@ -66,6 +66,7 @@ class NonParaModel:
         self.xFeatures = xFeatures
         self.xData = participant.passiveData[(['timestamp'] + self.xFeatures)]
         self.xDataNorm = self.xData[self.xFeatures] / self.xData[self.xFeatures].max()
+        self.enrolmentDate = datetime.datetime.strptime(participant.info['startDate'], '%d/%m/%Y')
 
     def constructModel(self):
         self.createIndexTable()
@@ -86,7 +87,8 @@ class NonParaModel:
             startDate, endDate = self.determineDatesFromYData(i)
             entry['dateStart'] = startDate
             entry['dateEnd'] = endDate
-            self.indexDict.append(entry)
+            if self.enrolmentDate.date() <= startDate.date():
+                self.indexDict.append(entry)
 
     def determineDatesFromYData(self, index):
         dt_str = list(self.activeDataSy[index:(index+1)]['datetime'])[0]

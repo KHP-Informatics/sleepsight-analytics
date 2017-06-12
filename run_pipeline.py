@@ -9,7 +9,7 @@ from preprocessing import KalmanImputation, Stationarity
 from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel
 
 # Overarching SleepSight pipeline script
-participantID = 1
+participantID = 3
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 

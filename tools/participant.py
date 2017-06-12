@@ -182,6 +182,8 @@ class Participant:
             #ToDo remove!
             if self.sleepSummaryFileName is not '':
                 self.loadSleepSummaryData(self.sleepSummaryFileName)
+            if self.metaDataFileName is not '':
+                self.loadMetaData(self.metaDataFileName)
 
     def splitFilesIntoActiveAndPassive(self, files):
         active = []
