@@ -69,7 +69,7 @@ class Periodicity:
             x = list(self.observations)
             y = list(targetObservation)
             windowLength = len(x) - 2*lag
-            if windowLength >= 7:
+            if windowLength >= 5:
                 xWinIdx = list(range(lag, (lag+windowLength)))
                 featureCcf = []
                 for i in range(0, 2*lag):
