@@ -179,6 +179,10 @@ class Participant:
             self.saveSnapshot()
         else:
             self.loadSnapshot()
+            if self.metaDataFileName is not '':
+                self.loadMetaData(self.metaDataFileName)
+            if self.sleepSummaryFileName is not '':
+                self.loadSleepSummaryData(self.sleepSummaryFileName)
 
     def splitFilesIntoActiveAndPassive(self, files):
         active = []
