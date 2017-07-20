@@ -1,8 +1,9 @@
-seaborn==0.7.1
-pykalman==0.9.5
-statsmodels==0.8.0
-pandas==0.19.2
-PyMySQL==0.7.9
 matplotlib==2.0.0
-numpy==1.12.0
 scipy==0.18.1
+statsmodels==0.8.0
+numpy==1.12.0
+pandas==0.19.2
+pyentrp==0.3.1
+seaborn==0.7.1
+PyMySQL==0.7.9
+pykalman==0.9.5
