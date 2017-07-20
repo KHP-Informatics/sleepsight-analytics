@@ -3,11 +3,12 @@ from datetime import datetime
 
 class Logger:
 
-    def __init__(self, path, filename, printLog=False):
+    def __init__(self, path, filename, printLog=False, timestampOn=True):
         self.filename = filename
         self.dir = path
         self.path = self.dir + self.filename
         self.printLog = printLog
+        self.timestampOn = timestampOn
         self.checkFileExists()
 
     def checkFileExists(self):
@@ -35,7 +36,9 @@ class Logger:
         rendered = ''
         if(newRun):
             rendered += renderedNewRun
-        rendered += '{}\t{}{}\n'.format(dateTime, indentations, msg)
+        if self.timestampOn:
+            rendered += '{}\t'.format(dateTime)
+        rendered += '{}{}\n'.format(indentations, msg)
         return rendered
 
     def renderIndentations(self, indents):
