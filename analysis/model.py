@@ -23,8 +23,8 @@ class ModelPrep:
     def discretisedRawSymptomScoreTable(self, dSST):
         self.__discretisedRawSymptomScoreTable = dSST
 
-    def __init__(self):
-        pass
+    def __init__(self, log):
+        self.log = log
 
     def discretiseSymtomScore(self, stationarySymptom, rawSymptom):
         m = round(np.mean(stationarySymptom['total']), 1)
@@ -41,7 +41,8 @@ class ModelPrep:
 
 class NonParaModel:
 
-    def __init__(self, yFeature, dayDivisionHour=0):
+    def __init__(self, yFeature, log, dayDivisionHour=0):
+        self.log = log
         self.divTime = datetime.time(hour=dayDivisionHour)
         self.yFeature = yFeature
         self.sleepFeaturesSum = ['startTime',
@@ -69,13 +70,13 @@ class NonParaModel:
         self.enrolmentDate = datetime.datetime.strptime(participant.info['startDate'], '%d/%m/%Y')
 
     def constructModel(self):
-        print('[STATUS] Creating index table.')
+        self.log.emit('[STATUS] Creating index table.', indents=1)
         self.createIndexTable()
-        print('[STATUS] Extracting rest-activity features.')
+        self.log.emit('[STATUS] Extracting rest-activity features.', indents=1)
         dfRestActivity = self.extractRestActivityFeatures(leadFeature='intra_steps')
-        print('[STATUS] Extracting disorganisation features.')
+        self.log.emit('[STATUS] Extracting disorganisation features.')
         dfDisorganisation = self.extractDisorganisationFeatures()
-        print('[STATUS] Extracting sleep features.')
+        self.log.emit('[STATUS] Extracting sleep features.', indents=1)
         dfSleep = self.extractSleepFeatures()
         self.features = pd.concat([dfRestActivity, dfDisorganisation, dfSleep], axis=1)
 
@@ -130,7 +131,7 @@ class NonParaModel:
                 test = index['indexStart']
                 newIndexDict.append(index)
             except KeyError:
-                print('[WARN] Removing index {}, due to missing \'indexStart\'.'.format(index['index']))
+                self.log.emit('[WARN] Removing index {}, due to missing \'indexStart\'.'.format(index['index']), indents=1)
         self.indexDict = newIndexDict
 
     def extractSleepFeatures(self):
@@ -306,7 +307,8 @@ class NonParaModel:
 
 class GpModel:
 
-    def __init__(self, xFeatures, yFeature, dayDivisionHour=0):
+    def __init__(self, xFeatures, yFeature, log, dayDivisionHour=0):
+        self.log = log
         self.divTime = datetime.time(hour=dayDivisionHour)
         self.xFeatures = xFeatures
         self.yFeature = yFeature

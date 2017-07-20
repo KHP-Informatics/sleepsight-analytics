@@ -18,7 +18,8 @@ class Periodicity:
         }
         return periodicity
 
-    def __init__(self, identifier='SleepSight', sensorName='Sensor name', path='/'):
+    def __init__(self, log, identifier='SleepSight', sensorName='Sensor name', path='/'):
+        self.log = log
         self.observations = []
         self.sensorName = sensorName
         self.path = path
@@ -85,7 +86,7 @@ class Periodicity:
                 return np.nan
 
             else:
-                print('[WARN] No cross validation possible. Choose a smaller lag to evaluate')
+                self.log.emit('[WARN] No cross validation possible. Choose a smaller lag to evaluate', indents=1)
 
     # pearson's correlation matrix
     def pearson_corr(self, lag=1440):
@@ -117,7 +118,7 @@ class Periodicity:
             if type is 'pcf' or type is 'all':
                 self.plotPcf(show=show, save=save)
             if type not in ['all', 'scf', 'acf', 'pcf']:
-                print('[PERIODICITY] WARN: Did not plot. Choose from "all", "scf", "acf" or "pcf".')
+                self.log.emit('[PERIODICITY] WARN: Did not plot. Choose from "all", "scf", "acf" or "pcf".', indents=1)
 
     def plotScf(self, show=True, save=False):
         scfBetaOne = self.scf[1]

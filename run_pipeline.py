@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 import sys
-from tools import Participant
+from tools import Participant, Logger
 from preprocessing import KalmanImputation, Stationarity
 import pandas as pd
 from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel
@@ -13,6 +13,7 @@ from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaMode
 participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
+log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
 
 args = sys.argv
 if len(args) > 1:
@@ -20,6 +21,8 @@ if len(args) > 1:
     participantID = args[1]
     path = args[2]
     plot_path = args[3]
+    log_path = args[4]
+
 
 p = Participant(id=participantID, path=path)
 p.activeSensingFilenameSelector = 'diary'
@@ -32,23 +35,22 @@ p.load()
 #p.saveSnapshot(p.path)
 print(p)
 
-
-print('\nBegin analysis pipeline:')
-
+log = Logger(log_path, p.id+'.txt', printLog=True)
+log.emit('Begin analysis pipeline', newRun=True)
 
 # Task: 'trim data' to Study Duration
 if not p.isPipelineTaskCompleted('trim data'):
-    print('\nContinuing with TRIM DATA...')
+    log.emit('Continuing with TRIM DATA...')
     p.trimData(p.info['startDate'], duration=56)
     p.updatePipelineStatusForTask('trim data')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping TRIM DATA - already completed.')
+    log.emit('Skipping TRIM DATA - already completed.')
 
 
 # Task: 'missingness' (Decision tree: No missingness vs not worn vs not charged)
 if not p.isPipelineTaskCompleted('missingness'):
-    print('\nContinuing with MISSINGNESS computation...')
+    log.emit('Continuing with MISSINGNESS computation...')
     mdt = MissingnessDT(passiveData=p.passiveData,
                         activeDataSymptom=p.activeDataSymptom,
                         activeDataSleep=p.activeDataSleep,
@@ -60,12 +62,12 @@ if not p.isPipelineTaskCompleted('missingness'):
     p.updatePipelineStatusForTask('missingness')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping MISSINGNESS - already completed.')
+    log.emit('Skipping MISSINGNESS - already completed.')
 
 
 # Task: 'imputation' (Kalman smoothing)
 if not p.isPipelineTaskCompleted('imputation'):
-    print('\nContinuing with IMPUTATION...')
+    log.emit('Continuing with IMPUTATION...')
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
             ki = KalmanImputation()
@@ -77,12 +79,12 @@ if not p.isPipelineTaskCompleted('imputation'):
     p.updatePipelineStatusForTask('imputation')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping IMPUTATION - already completed.')
+    log.emit('Skipping IMPUTATION - already completed.')
 
 
 # Task 'stationarity' (differencing)
 if not p.isPipelineTaskCompleted('stationarity'):
-    print('\nContinuing with STATIONARITY...')
+    log.emit('Continuing with STATIONARITY...')
     st = Stationarity(data=p.activeDataSymptom)
     st.makeStationary(show=True)
     p.stationarySymptomData = st.stationaryData
@@ -95,17 +97,17 @@ if not p.isPipelineTaskCompleted('stationarity'):
     p.updatePipelineStatusForTask('stationarity')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping STATIONARITY - already completed.')
+    log.emit('Skipping STATIONARITY - already completed.')
 
 
 # Task 'periodicity' (Determining time window of repating sequences)
 if not p.isPipelineTaskCompleted('periodicity'):
-    print('\nContinuing with PERIODICITY...')
+    log.emit('Continuing with PERIODICITY...')
     periodicity = {}
     acfPeakStats = {}
     for pSensor in p.passiveSensors:
         if pSensor not in 'timestamp':
-            pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path)
+            pdy = Periodicity(identifier=p.id, sensorName=pSensor, path=plot_path, log=log)
             pdy.addObservtions(p.getPassiveDataColumn(pSensor, type='stationary'))
             pdy.auto_corr(nMinutes=(1440 * 28))
             pdy.plot('acf', show=False, save=True)
@@ -116,14 +118,14 @@ if not p.isPipelineTaskCompleted('periodicity'):
     p.updatePipelineStatusForTask('periodicity')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping PERIODICITY - already completed.')
+    log.emit('Skipping PERIODICITY - already completed.')
 
 
 ######## NON PARAMETRIC #################################################
 # Task 'non-parametric modelprep'
 if not p.isPipelineTaskCompleted('non-parametric model prep'):
-    print('\nContinuing with NON-PARAMETRIC MODEL PREP...')
-    mp = ModelPrep()
+    log.emit('Continuing with NON-PARAMETRIC MODEL PREP...')
+    mp = ModelPrep(log=log)
     mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
@@ -134,16 +136,16 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     p.updatePipelineStatusForTask('non-parametric model prep')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping NON-PARAMETRIC MODEL PREP - already completed.')
+    log.emit('Skipping NON-PARAMETRIC MODEL PREP - already completed.')
 
 
 # Task 'delay determination' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('delay determination'):
-    print('\nContinuing with DELAY DETERMINATION...')
+    log.emit('Continuing with DELAY DETERMINATION...')
     delayCCF = []
     features = p.nonParametricFeatures.columns
     for feature in features:
-        pdy = Periodicity(identifier=p.id, sensorName=feature, path=plot_path)
+        pdy = Periodicity(identifier=p.id, sensorName=feature, path=plot_path, log=log)
         pdy.addObservtions(p.nonParametricFeatures[feature])
         delay = pdy.cross_cor(targetObservation=p.activeDataSymptom['total'], lag=14)
         delayCCF.append(delay)
@@ -153,16 +155,18 @@ if not p.isPipelineTaskCompleted('delay determination'):
     p.updatePipelineStatusForTask('delay determination')
     p.saveSnapshot(path)
 else:
-    print('\nSkipping DELAY DETERMINATION - already completed.')
+    log.emit('Skipping DELAY DETERMINATION - already completed.')
+
+log.getLastMessage()
 
 exit()
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
-    print('\nContinuing with GP-MODEL GEN...')
-    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12)
+    log.emit('Continuing with GP-MODEL GEN...')
+    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12, log=log)
     gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
     gpm.createIndexTable()
     print(gpm.indexDict)
 else:
-    print('\nSkipping GP-MODEL GEN - already completed.')
+    log.emit('Skipping GP-MODEL GEN - already completed.')
