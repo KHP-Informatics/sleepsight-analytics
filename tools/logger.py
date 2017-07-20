@@ -17,7 +17,7 @@ class Logger:
         except FileNotFoundError:
             now = datetime.now()
             f = open(self.path, 'w')
-            f.write('+++ FILE CREATED ON {} +++'.format(now))
+            f.write('+++ FILE CREATED ON {} +++\n'.format(now))
             f.close()
 
     def emit(self, msg, newRun=False, indents=0):
