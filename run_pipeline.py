@@ -29,9 +29,8 @@ p.activeSensingFilenameSelector = 'diary'
 p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
-#p.pipelineStatus['periodicity'] = False
-#p.pipelineStatus['non-parametric model prep'] = False
-#p.pipelineStatus['delay determination'] = False
+
+#p.pipelineStatus['dimensionality reduction'] = False
 #p.saveSnapshot(p.path)
 print(p)
 
@@ -157,7 +156,24 @@ if not p.isPipelineTaskCompleted('delay determination'):
 else:
     log.emit('Skipping DELAY DETERMINATION - already completed.')
 
-log.getLastMessage()
+
+# Task 'dataset balancing' (determine delay between active and passive data)
+if not p.isPipelineTaskCompleted('dataset balancing'):
+    log.emit('Continuing with DATASET BALANCING...')
+    #p.updatePipelineStatusForTask('dataset balancing')
+    #p.saveSnapshot(path)
+else:
+    log.emit('Skipping DATASET BALANCING - already completed.')
+
+
+# Task 'dimensionality reduction' (determine delay between active and passive data)
+if not p.isPipelineTaskCompleted('dimensionality reduction'):
+    log.emit('Continuing with DIMENSIONALITY REDUCTION...')
+    #p.updatePipelineStatusForTask('dimensionality reduction')
+    #p.saveSnapshot(path)
+else:
+    log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
+
 
 exit()
 

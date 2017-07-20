@@ -149,6 +149,7 @@ class Participant:
             'periodicity': False,
             'non-parametric model prep': False,
             'delay determination': False,
+            'dataset balancing': False,
             'GP model gen.': False,
             'anomaly detect.': False,
             'association': False
@@ -491,11 +492,12 @@ class Participant:
                                                                    self.info['PANSS']['total'],
                                                                    str(self.info['medication']))
         pipelineInfo = 'Current Pipeline Status of Participant {}:\n\n' \
-               '>> passive data[{}] & active data[{}]\n    |\n>> trim[{}]\n    |\n' \
-               '>> merging[{}] --------|\n    |                    |' \
-               '\n>> imputation[{}]    missingness[{}]\n    |\n>> stationarity[{}]\n    |\n' \
-               '>> periodicity[{}]\n    |\n>> Non-parametric model prep [{}]\n    |\n' \
-                '>> Delay determination [{}]\n    |\n' \
+               '>> Passive data[{}] & active data[{}]\n    |\n>> Trim[{}]\n    |\n' \
+               '>> Merging[{}] --------|\n    |                    |' \
+               '\n>> Imputation[{}]    Missingness[{}]\n    |\n>> Stationarity[{}]\n    |\n' \
+               '>> Periodicity[{}]\n    |\n>> Non-parametric model prep [{}]\n    |\n' \
+                '>> Delay determination [{}]\n    |\n>> Dataset balacing [{}]\n    |\n' \
+                '>> Dimensionality reduction [{}]\n    |\n' \
                 '>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
                                                     self.pipelineStatus['passive data'],
                                                     self.pipelineStatus['active data'],
@@ -507,6 +509,8 @@ class Participant:
                                                     self.pipelineStatus['periodicity'],
                                                     self.pipelineStatus['non-parametric model prep'],
                                                     self.pipelineStatus['delay determination'],
+                                                    self.pipelineStatus['dataset balancing'],
+                                                    self.pipelineStatus['dimensionality reduction'],
                                                     self.pipelineStatus['GP model gen.'],
                                                     self.pipelineStatus['anomaly detect.'],
                                                     self.pipelineStatus['association']
