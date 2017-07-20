@@ -34,7 +34,7 @@ p.load()
 #p.saveSnapshot(p.path)
 print(p)
 
-log = Logger(log_path, 'sleepsight'+p.id+'.txt', printLog=True)
+log = Logger(log_path, 'sleepsight'+p.id+'.log', printLog=True)
 log.emit('Begin analysis pipeline', newRun=True)
 
 # Task: 'trim data' to Study Duration
