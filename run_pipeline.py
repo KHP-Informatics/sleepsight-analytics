@@ -7,7 +7,7 @@ import sys
 from tools import Participant, Logger
 from preprocessing import KalmanImputation, Stationarity
 import pandas as pd
-from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel
+from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel, Rebalance
 
 # Overarching SleepSight pipeline script
 participantID = 1
@@ -160,11 +160,25 @@ else:
 # Task 'dataset balancing' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dataset balancing'):
     log.emit('Continuing with DATASET BALANCING...')
+    p.activeDataSymptom = p.activeDataSymptom.drop('label', 1)
+    p.stationarySymptomData = p.stationarySymptomData.drop('label', 1)
+
+    mp = ModelPrep(log=log)
+    mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
+    p.activeDataSymptom = mp.discretisedRawScoreTable
+    p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
+
+
+
+    #r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom['label'])
+    #r.test()
+
     #p.updatePipelineStatusForTask('dataset balancing')
-    #p.saveSnapshot(path)
+    p.saveSnapshot(path)
 else:
     log.emit('Skipping DATASET BALANCING - already completed.')
 
+exit()
 
 # Task 'dimensionality reduction' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dimensionality reduction'):
@@ -175,7 +189,6 @@ else:
     log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
 
 
-exit()
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):

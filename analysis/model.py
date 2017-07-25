@@ -27,17 +27,21 @@ class ModelPrep:
         self.log = log
 
     def discretiseSymtomScore(self, stationarySymptom, rawSymptom):
-        m = round(np.mean(stationarySymptom['total']), 1)
-        sd = round(np.std(stationarySymptom['total']), 2)
-        minorIdx = stationarySymptom['total'] >= (m + sd)
-        labels = ['major'] * len(minorIdx)
-        for i in np.where(minorIdx == True)[0]:
-            labels[i] = 'minor'
-        labelsTable = pd.DataFrame(labels)
-        labelsTable.columns = ['label']
-        labelsTable.index = stationarySymptom.index
-        self.discretisedStationarySymptomScoreTable = pd.concat([stationarySymptom, labelsTable], axis=1)
-        self.discretisedRawScoreTable = pd.concat([rawSymptom, labelsTable], axis=1)
+        if 'label' not in rawSymptom.columns:
+            m = round(np.mean(stationarySymptom['total']), 1)
+            sd = round(np.std(stationarySymptom['total']), 2)
+            minorIdx = stationarySymptom['total'] >= (m + sd)
+            labels = ['major'] * len(minorIdx)
+            for i in np.where(minorIdx == True)[0]:
+                labels[i] = 'minor'
+            labelsTable = pd.DataFrame(labels)
+            labelsTable.columns = ['label']
+            labelsTable.index = stationarySymptom.index
+            self.discretisedStationarySymptomScoreTable = pd.concat([stationarySymptom, labelsTable], axis=1)
+            self.discretisedRawScoreTable = pd.concat([rawSymptom, labelsTable], axis=1)
+        else:
+            self.discretisedStationarySymptomScoreTable = stationarySymptom
+            self.discretisedRawScoreTable = rawSymptom
 
 class NonParaModel:
 
