@@ -159,7 +159,8 @@ else:
 
 # Task 'dataset balancing' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dataset balancing'):
-    log.emit('Continuing with DATASET BALANCING...')
+    #log.emit('Continuing with DATASET BALANCING...')
+    log.emit('TMP: Recomputing label from discretised data..')
     p.activeDataSymptom = p.activeDataSymptom.drop('label', 1)
     p.stationarySymptomData = p.stationarySymptomData.drop('label', 1)
 
