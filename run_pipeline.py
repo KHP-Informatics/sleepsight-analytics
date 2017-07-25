@@ -159,23 +159,13 @@ else:
 
 # Task 'dataset balancing' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dataset balancing'):
-    #log.emit('Continuing with DATASET BALANCING...')
-    log.emit('TMP: Recomputing label from discretised data..')
-    p.activeDataSymptom = p.activeDataSymptom.drop('label', 1)
-    p.stationarySymptomData = p.stationarySymptomData.drop('label', 1)
+    log.emit('Continuing with DATASET BALANCING...')
 
-    mp = ModelPrep(log=log)
-    mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
-    p.activeDataSymptom = mp.discretisedRawScoreTable
-    p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
-
-
-
-    #r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom['label'])
-    #r.test()
+    r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom['label'])
+    r.test()
 
     #p.updatePipelineStatusForTask('dataset balancing')
-    p.saveSnapshot(path)
+    #p.saveSnapshot(path)
 else:
     log.emit('Skipping DATASET BALANCING - already completed.')
 
