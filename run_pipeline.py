@@ -10,7 +10,7 @@ import pandas as pd
 from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel, Rebalance
 
 # Overarching SleepSight pipeline script
-participantID = 1
+participantID = 3
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -126,6 +126,7 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     log.emit('Continuing with NON-PARAMETRIC MODEL PREP...')
     mp = ModelPrep(log=log)
     mp.discretiseSymtomScore(p.stationarySymptomData, p.activeDataSymptom)
+    mp.removeEntriesPriorToStudyStart(p.info)
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
     npm = NonParaModel(yFeature='total', dayDivisionHour=12)
@@ -156,13 +157,14 @@ if not p.isPipelineTaskCompleted('delay determination'):
 else:
     log.emit('Skipping DELAY DETERMINATION - already completed.')
 
-
 # Task 'dataset balancing' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dataset balancing'):
     log.emit('Continuing with DATASET BALANCING...')
-
-    r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom['label'])
-    r.test()
+    r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom, log=log)
+    r.runADASYN()
+    r.runSMOTE()
+    r.plot(path=plot_path, pid=p.id)
+    p.nonParametricDatasetRebalanced = r.rebalanced
 
     #p.updatePipelineStatusForTask('dataset balancing')
     #p.saveSnapshot(path)

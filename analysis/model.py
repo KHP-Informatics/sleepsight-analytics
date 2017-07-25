@@ -43,6 +43,19 @@ class ModelPrep:
             self.discretisedStationarySymptomScoreTable = stationarySymptom
             self.discretisedRawScoreTable = rawSymptom
 
+    def removeEntriesPriorToStudyStart(self, info):
+        dStart = datetime.datetime.strptime(info['startDate'], '%d/%m/%Y')
+        dates = self.discretisedRawScoreTable['datetime']
+        dDates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in dates]
+        validDatesIdxs = []
+        for i in range(0, len(dDates)):
+            if dDates[i] > dStart:
+                validDatesIdxs.append(i)
+        self.discretisedRawScoreTable = self.discretisedRawScoreTable.loc[validDatesIdxs, :]
+        self.discretisedStationarySymptomScoreTable = self.discretisedStationarySymptomScoreTable.loc[validDatesIdxs, :]
+
+
+
 class NonParaModel:
 
     def __init__(self, yFeature, log, dayDivisionHour=0):

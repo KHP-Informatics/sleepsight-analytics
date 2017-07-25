@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from datetime import datetime as dt
 
 class InfoGain:
 
@@ -132,20 +133,137 @@ class InfoGain:
 ###############################################################################
 
 from collections import Counter
-from sklearn.datasets import make_classification
-from imblearn.over_sampling import ADASYN
+from sklearn.decomposition import PCA
+from imblearn.over_sampling import ADASYN, SMOTE
+import matplotlib.pyplot as plt
 
 class Rebalance:
 
-    def __init__(self, X, y):
-        self.pdX = X
-        self.pdY = y
-        print(y)
+    def __init__(self, X, y, log):
+        self.log = log
+        xIdxs, yIdxs = self.alignXandYIndexes(X.index, y['datetime'])
+        self.X = self.formatX(X, xIdxs)
+        self.Y = self.formatY(y, yIdxs)
+        self.log.emit('N-samples X:{} Y:{}'.format(len(xIdxs), len(yIdxs)), indents=1)
+        self.rebalanced = dict()
+        for row in self.X:
+            print(row)
 
-    def test(self):
-        X, y = make_classification(n_classes=2, class_sep=2, weights = [0.1, 0.9], n_informative = 3, n_redundant = 1,
-                                   flip_y = 0, n_features = 20, n_clusters_per_class = 1, n_samples = 1000, random_state = 10)
-        print('Original dataset shape {}'.format(Counter(y)))
-        ada = ADASYN(random_state=42)
-        X_res, y_res = ada.fit_sample(X, y)
-        print('Resampled dataset shape {}'.format(Counter(y_res)))
+    def formatY(self, y, yIdxs):
+        tmpY = list(y['label'])
+        tmpYnumeric = []
+        for i in range(0, len(tmpY)):
+            c = 1
+            if 'minor' in tmpY[i]:
+                c = 0
+            tmpYnumeric.append(c)
+        y = [tmpYnumeric[idx] for idx in yIdxs]
+        return y
+
+    def alignXandYIndexes(self, xIdx, yIdx):
+        yDates = list(yIdx)
+        xIdxs = []
+        yIdxs = []
+        for i in range(0, len(xIdx)):
+            for j in range(0, len(yDates)):
+                d = dt.strptime(yDates[j], '%Y-%m-%d %H:%M')
+                if xIdx[i].year == d.year and xIdx[i].month == d.month and xIdx[i].day == d.day:
+                    yIdxs.append(j)
+                    xIdxs.append(i)
+        return xIdxs, yIdxs
+
+    def formatX(self, X, xIdxs):
+        tmpX = X
+        tmpX['startTime'] = self.formatStartTimeIntoDeltaMinutes(X['startTime'])
+        tmpX = tmpX.apply(pd.to_numeric, args=('coerce',))
+        tmpX = tmpX.replace([np.inf, -np.inf], np.nan)
+        tmpX = tmpX.fillna(value=0)
+        tmpX = tmpX.reset_index().values.tolist()
+        tmpXwithoutIndex = [np.array(sample[1:len(sample)]) for sample in tmpX]
+        x = [tmpXwithoutIndex[idx] for idx in xIdxs]
+        return x
+
+    def formatStartTimeIntoDeltaMinutes(self, st):
+        stdt = []
+        for d in st:
+            if 'NaN' not in d:
+                tmpD = dt.strptime(d, '%Y-%m-%dT%H:%M:%S.000')
+                tmpV = tmpD.hour * 60 + tmpD.minute
+                stdt.append(tmpV)
+            else:
+                tmpD = 'NaN'
+                stdt.append(tmpD)
+        return stdt
+
+    def runADASYN(self):
+        ada = ADASYN()
+        self.Xadasyn, self.Yadasyn = ada.fit_sample(self.X, self.Y)
+        self.rebalanced['ADASYN'] = {'X':self.Xadasyn, 'y': self.Yadasyn}
+        self.log.emit('ADASYN: Original dataset shape {}'.format(Counter(self.Y)), indents=1)
+        self.log.emit('ADASYN: Resampled dataset shape {}'.format(Counter(self.Yadasyn)), indents=1)
+
+    def runSMOTE(self):
+        try:
+            sm = SMOTE(kind='regular')
+            self.Xsmote, self.Ysmote = sm.fit_sample(self.X, self.Y)
+            self.rebalanced['SMOTE'] = {'X': self.Xsmote, 'y': self.Ysmote}
+            self.log.emit('SMOTE: Original dataset shape {}'.format(Counter(self.Y)), indents=1)
+            self.log.emit('SMOTE: Resampled dataset shape {}'.format(Counter(self.Ysmote)), indents=1)
+        except ValueError:
+            self.log.emit('SMOTE ABORTED: Not enough samples of minor class: {}'.format(Counter(self.Y)), indents=1)
+
+    def plot(self, show=False, save=True, path='', pid=''):
+        runAnalyses = self.rebalanced.keys()
+
+        if len(runAnalyses) > 0:
+            self.log.emit('Plotting {}...'.format(runAnalyses), indents=1)
+            pca = PCA(n_components=2)
+            f, axes = plt.subplots(1, len(runAnalyses)+1)
+
+            visX = pca.fit_transform(self.X)
+            y0 = [i for i in range(0, len(self.Y)) if self.Y[i] == 0]
+            y1 = [i for i in range(0, len(self.Y)) if self.Y[i] == 1]
+            c0 = axes[0].scatter(visX[y0, 0], visX[y0, 1], label="Minor class",
+                             alpha=0.5)
+            c1 = axes[0].scatter(visX[y1, 0], visX[y1, 1], label="Major class",
+                             alpha=0.5)
+            axes[0].set_title('Original set')
+
+            visXada = pca.transform(self.Xadasyn)
+            y0 = [i for i in range(0, len(self.Yadasyn)) if self.Yadasyn[i] == 0]
+            y1 = [i for i in range(0, len(self.Yadasyn)) if self.Yadasyn[i] == 1]
+            axes[1].scatter(visXada[y0, 0], visXada[y0, 1],
+                        label="Minor class", alpha=.5)
+            axes[1].scatter(visXada[y1, 0], visXada[y1, 1],
+                        label="Major class", alpha=.5)
+            axes[1].set_title('ADASYN')
+
+            if 'SMOTE' in runAnalyses:
+                visXsm = pca.transform(self.Xsmote)
+                y0 = [i for i in range(0, len(self.Ysmote)) if self.Ysmote[i] == 0]
+                y1 = [i for i in range(0, len(self.Ysmote)) if self.Ysmote[i] == 1]
+                axes[2].scatter(visXsm[y0, 0], visXsm[y0, 1],
+                            label="Minor class", alpha=.5)
+                axes[2].scatter(visXsm[y1, 0], visXsm[y1, 1],
+                            label="Major class", alpha=.5)
+                axes[2].set_title('SMOTE')
+
+            # make nice plotting
+            for ax in axes:
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.get_xaxis().tick_bottom()
+                ax.get_yaxis().tick_left()
+                ax.spines['left'].set_position(('outward', 10))
+                ax.spines['bottom'].set_position(('outward', 10))
+
+            plt.figlegend((c0, c1), ('Minor class', 'Major class'), loc='lower center',
+                          ncol=2, labelspacing=0.)
+            plt.tight_layout(pad=3)
+            if show:
+                plt.show()
+            if save:
+                figurePath = '{}{}_PCA_rebalanced_dataset.png'.format(path, pid)
+                plt.savefig(figurePath)
+        else:
+            self.log.emit('Plot ABORTED: No dataset was rebalanced. Try runADASYN() or runSMOTE().', indents=1)
