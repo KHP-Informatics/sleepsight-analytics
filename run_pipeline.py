@@ -10,7 +10,7 @@ import pandas as pd
 from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel, Rebalance
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'

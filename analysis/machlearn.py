@@ -213,7 +213,7 @@ class Rebalance:
             self.log.emit('SMOTE ABORTED: Not enough samples of minor class: {}'.format(Counter(self.Y)), indents=1)
 
     def plot(self, show=False, save=True, path='', pid=''):
-        runAnalyses = self.rebalanced.keys()
+        runAnalyses = list(self.rebalanced.keys())
 
         if len(runAnalyses) > 0:
             self.log.emit('Plotting {}...'.format(runAnalyses), indents=1)
