@@ -444,7 +444,9 @@ class Participant:
         else:
             self.passiveData[col] = np.array(data)
 
-    def updatePipelineStatusForTask(self, taskName, status=True):
+    def updatePipelineStatusForTask(self, taskName, status=True, log=''):
+        if type(log) is not type(''):
+            log.emit('Task {} updated to "complete = {}".'.format(taskName.upper(), status))
         keys = self.pipelineStatus.keys()
         if taskName in keys:
             self.pipelineStatus[taskName] = status

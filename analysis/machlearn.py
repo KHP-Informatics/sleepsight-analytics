@@ -268,7 +268,7 @@ class Rebalance:
             self.log.emit('Plot ABORTED: No dataset was rebalanced. Try runADASYN() or runSMOTE().', indents=1)
 
 
-from skfeature.function.information_theoretical_based import MRMR
+from skfeature.function.information_theoretical_based import MRMR, MIFS
 
 
 class FeatureSelection:
@@ -278,23 +278,48 @@ class FeatureSelection:
         self.data = data
         self.selectedFeatures = dict()
 
+    def runMIFS(self):
+        datasetKeys = self.data.keys()
+        for datasetKey in datasetKeys:
+            self.log.emit('MIFS feature selection on {} dataset...'.format(datasetKey), indents=1)
+            f = self.data[datasetKey]['f']
+            X = self.data[datasetKey]['X']
+            y = self.data[datasetKey]['y']
+            fIdxs = MIFS.mifs(X, y, n_selected_features=10)
+            fRank = [f[i] for i in fIdxs]
+            self.addToSelectedFeatures('MIFS', datasetKey, fOrig=f, fIdxs=fIdxs, fRank=fRank)
+
     def runMRMR(self):
         datasetKeys = self.data.keys()
         for datasetKey in datasetKeys:
-            self.log.emit('Applying mRMR on {} dataset...'.format(datasetKey), indents=1)
+            self.log.emit('mRMR feature selection on {} dataset...'.format(datasetKey), indents=1)
             f = self.data[datasetKey]['f']
             X = self.data[datasetKey]['X']
             y = self.data[datasetKey]['y']
             fIdxs = MRMR.mrmr(X, y, n_selected_features=10)
-            fRanked = [f[i] for i in fIdxs]
-            mRMRdict = {
-                datasetKey:{
-                    'fOrig': f,
-                    'fIdxs': fIdxs,
-                    'fRank': fRanked
-                }
-            }
-            self.selectedFeatures['mRMR'] = mRMRdict
+            fRank = [f[i] for i in fIdxs]
+            self.addToSelectedFeatures('mRMR', datasetKey, fOrig=f, fIdxs=fIdxs, fRank=fRank)
+
+    def addToSelectedFeatures(self, methodName, datasetKey, fOrig, fIdxs, fRank):
+        addEntry =  {
+            'fOrig': fOrig,
+            'fIdxs': fIdxs,
+            'fRank': fRank
+        }
+        try:
+            self.selectedFeatures[methodName][datasetKey] = addEntry
+        except KeyError:
+            newEntry = {datasetKey:addEntry}
+            self.selectedFeatures[methodName] = newEntry
+
+
+    def __str__(self):
+        rendered = 'FEATURE SELECTION INFO:\n'
+        for methodKey in self.selectedFeatures.keys():
+            rendered += '{}:\n'.format(methodKey)
+            for datasetKey in self.selectedFeatures[methodKey].keys():
+                rendered += '\t{}:\t{}\n'.format(datasetKey, self.selectedFeatures[methodKey][datasetKey]['fRank'][0:10])
+        return rendered
 
 
 

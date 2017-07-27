@@ -41,7 +41,7 @@ log.emit('Begin analysis pipeline', newRun=True)
 if not p.isPipelineTaskCompleted('trim data'):
     log.emit('Continuing with TRIM DATA...')
     p.trimData(p.info['startDate'], duration=56)
-    p.updatePipelineStatusForTask('trim data')
+    p.updatePipelineStatusForTask('trim data', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping TRIM DATA - already completed.')
@@ -58,7 +58,7 @@ if not p.isPipelineTaskCompleted('missingness'):
     mdt.run()
     mdt.formatMissingness()
     p.missingness = mdt.missingness
-    p.updatePipelineStatusForTask('missingness')
+    p.updatePipelineStatusForTask('missingness', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping MISSINGNESS - already completed.')
@@ -75,7 +75,7 @@ if not p.isPipelineTaskCompleted('imputation'):
             ki.smooth()
             ki.limitToPositiveVals()
             p.setPassiveDataColumn(ki.imputedObservations, col=pSensor)
-    p.updatePipelineStatusForTask('imputation')
+    p.updatePipelineStatusForTask('imputation', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping IMPUTATION - already completed.')
@@ -93,7 +93,7 @@ if not p.isPipelineTaskCompleted('stationarity'):
     st.makeStationary(show=True)
     p.stationaryPassiveData = st.stationaryData
     p.stationaryPassiveStats = st.stationaryStats
-    p.updatePipelineStatusForTask('stationarity')
+    p.updatePipelineStatusForTask('stationarity', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping STATIONARITY - already completed.')
@@ -114,7 +114,7 @@ if not p.isPipelineTaskCompleted('periodicity'):
             periodicity[pSensor] = pdy.periodicity
     p.periodicity = periodicity
     p.acfPeakStats = acfPeakStats
-    p.updatePipelineStatusForTask('periodicity')
+    p.updatePipelineStatusForTask('periodicity', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping PERIODICITY - already completed.')
@@ -133,7 +133,7 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     npm.submitData(participant=p, xFeatures=p.passiveSensors)
     npm.constructModel()
     p.nonParametricFeatures = npm.features
-    p.updatePipelineStatusForTask('non-parametric model prep')
+    p.updatePipelineStatusForTask('non-parametric model prep', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping NON-PARAMETRIC MODEL PREP - already completed.')
@@ -152,7 +152,7 @@ if not p.isPipelineTaskCompleted('delay determination'):
     dfDelay = pd.DataFrame(delayCCF, columns=['Participant {}'.format(p.id)])
     dfDelay.index = features
     p.featuresDelay = dfDelay
-    p.updatePipelineStatusForTask('delay determination')
+    p.updatePipelineStatusForTask('delay determination', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping DELAY DETERMINATION - already completed.')
@@ -165,7 +165,7 @@ if not p.isPipelineTaskCompleted('dataset balancing'):
     r.runSMOTE()
     r.plot(path=plot_path, pid=p.id)
     p.nonParametricDatasetRebalanced = r.rebalanced
-    p.updatePipelineStatusForTask('dataset balancing')
+    p.updatePipelineStatusForTask('dataset balancing', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping DATASET BALANCING - already completed.')
@@ -174,13 +174,26 @@ else:
 if not p.isPipelineTaskCompleted('dimensionality reduction'):
     log.emit('Continuing with DIMENSIONALITY REDUCTION...')
     fs = FeatureSelection(data=p.nonParametricDatasetRebalanced, log=log)
+    fs.runMIFS()
     fs.runMRMR()
+    p.nonParametricFeaturesSelected = fs.selectedFeatures
+    p.updatePipelineStatusForTask('dimensionality reduction', log=log)
+    p.saveSnapshot(path, log=log)
+else:
+    log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
+
+exit()
+
+# Task 'dimensionality reduction' (determine delay between active and passive data)
+if not p.isPipelineTaskCompleted('dimensionality reduction'):
+    log.emit('Continuing with DIMENSIONALITY REDUCTION...')
     #p.updatePipelineStatusForTask('dimensionality reduction')
     #p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
 
-exit()
+
+######## PARAMETRIC #################################################
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
