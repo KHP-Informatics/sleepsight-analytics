@@ -457,7 +457,9 @@ class Participant:
             print('[ERR] Requested task <{}> is unknown.'.format(taskName))
             exit()
 
-    def saveSnapshot(self, path=''):
+    def saveSnapshot(self, path='', log=''):
+        if type(log) is not type(''):
+            log.emit('Saving snapshot...')
         if path not in '':
             self.path = path
         output_filen = self.path + self.id + "_participant.pkl"

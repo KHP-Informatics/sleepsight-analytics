@@ -3,6 +3,10 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime as dt
+from collections import Counter
+from sklearn.decomposition import PCA
+from imblearn.over_sampling import ADASYN, SMOTE
+import matplotlib.pyplot as plt
 
 class InfoGain:
 
@@ -132,22 +136,17 @@ class InfoGain:
 # print(ig)
 ###############################################################################
 
-from collections import Counter
-from sklearn.decomposition import PCA
-from imblearn.over_sampling import ADASYN, SMOTE
-import matplotlib.pyplot as plt
 
 class Rebalance:
 
     def __init__(self, X, y, log):
         self.log = log
         xIdxs, yIdxs = self.alignXandYIndexes(X.index, y['datetime'])
+        self.featureList = X.columns
         self.X = self.formatX(X, xIdxs)
         self.Y = self.formatY(y, yIdxs)
         self.log.emit('N-samples X:{} Y:{}'.format(len(xIdxs), len(yIdxs)), indents=1)
         self.rebalanced = dict()
-        for row in self.X:
-            print(row)
 
     def formatY(self, y, yIdxs):
         tmpY = list(y['label'])
@@ -186,7 +185,7 @@ class Rebalance:
     def formatStartTimeIntoDeltaMinutes(self, st):
         stdt = []
         for d in st:
-            if 'NaN' not in d:
+            if 'NaN' not in d and type(d) is type(''):
                 tmpD = dt.strptime(d, '%Y-%m-%dT%H:%M:%S.000')
                 tmpV = tmpD.hour * 60 + tmpD.minute
                 stdt.append(tmpV)
@@ -198,7 +197,7 @@ class Rebalance:
     def runADASYN(self):
         ada = ADASYN()
         self.Xadasyn, self.Yadasyn = ada.fit_sample(self.X, self.Y)
-        self.rebalanced['ADASYN'] = {'X':self.Xadasyn, 'y': self.Yadasyn}
+        self.rebalanced['ADASYN'] = {'X':self.Xadasyn, 'y': self.Yadasyn, 'f': self.featureList}
         self.log.emit('ADASYN: Original dataset shape {}'.format(Counter(self.Y)), indents=1)
         self.log.emit('ADASYN: Resampled dataset shape {}'.format(Counter(self.Yadasyn)), indents=1)
 
@@ -206,7 +205,7 @@ class Rebalance:
         try:
             sm = SMOTE(kind='regular')
             self.Xsmote, self.Ysmote = sm.fit_sample(self.X, self.Y)
-            self.rebalanced['SMOTE'] = {'X': self.Xsmote, 'y': self.Ysmote}
+            self.rebalanced['SMOTE'] = {'X': self.Xsmote, 'y': self.Ysmote, 'f': self.featureList}
             self.log.emit('SMOTE: Original dataset shape {}'.format(Counter(self.Y)), indents=1)
             self.log.emit('SMOTE: Resampled dataset shape {}'.format(Counter(self.Ysmote)), indents=1)
         except ValueError:
@@ -267,3 +266,37 @@ class Rebalance:
                 plt.savefig(figurePath)
         else:
             self.log.emit('Plot ABORTED: No dataset was rebalanced. Try runADASYN() or runSMOTE().', indents=1)
+
+
+from skfeature.function.information_theoretical_based import MRMR
+
+
+class FeatureSelection:
+
+    def __init__(self, data, log):
+        self.log = log
+        self.data = data
+        self.selectedFeatures = dict()
+
+    def runMRMR(self):
+        datasetKeys = self.data.keys()
+        for datasetKey in datasetKeys:
+            self.log.emit('Applying mRMR on {} dataset...'.format(datasetKey), indents=1)
+            f = self.data[datasetKey]['f']
+            X = self.data[datasetKey]['X']
+            y = self.data[datasetKey]['y']
+            fIdxs = MRMR.mrmr(X, y, n_selected_features=10)
+            fRanked = [f[i] for i in fIdxs]
+            mRMRdict = {
+                datasetKey:{
+                    'fOrig': f,
+                    'fIdxs': fIdxs,
+                    'fRank': fRanked
+                }
+            }
+            self.selectedFeatures['mRMR'] = mRMRdict
+
+
+
+
+
