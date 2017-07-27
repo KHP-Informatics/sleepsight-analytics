@@ -150,6 +150,7 @@ class Participant:
             'non-parametric model prep': False,
             'delay determination': False,
             'dataset balancing': False,
+            'np-model gen': False,
             'GP model gen.': False,
             'anomaly detect.': False,
             'association': False
@@ -488,36 +489,46 @@ class Participant:
                               '   Start date:       {}\n' \
                               '   Illness duration: {} years\n' \
                               '   PANSS score:      {}\n' \
-                              '   Medication:       {}\n\n'.format(self.info['id'],
-                                                                   self.info['age'],
-                                                                   self.info['gender'],
-                                                                   self.info['startDate'],
-                                                                   self.info['durationIllness'],
-                                                                   self.info['PANSS']['total'],
-                                                                   str(self.info['medication']))
+                              '   Medication:       {}\n\n'\
+                .format(self.info['id'],
+                   self.info['age'],
+                   self.info['gender'],
+                   self.info['startDate'],
+                   self.info['durationIllness'],
+                   self.info['PANSS']['total'],
+                   str(self.info['medication']))
         pipelineInfo = 'Current Pipeline Status of Participant {}:\n\n' \
-               '>> Passive data[{}] & active data[{}]\n    |\n>> Trim[{}]\n    |\n' \
-               '>> Merging[{}] --------|\n    |                    |' \
-               '\n>> Imputation[{}]    Missingness[{}]\n    |\n>> Stationarity[{}]\n    |\n' \
-               '>> Periodicity[{}]\n    |\n>> Non-parametric model prep [{}]\n    |\n' \
-                '>> Delay determination [{}]\n    |\n>> Dataset balacing [{}]\n    |\n' \
-                '>> Dimensionality reduction [{}]\n    |\n' \
-                '>> GP model gen.[{}]\n    |\n>> Anomaly detect.[{}]'.format(self.id,
-                                                    self.pipelineStatus['passive data'],
-                                                    self.pipelineStatus['active data'],
-                                                    self.pipelineStatus['trim data'],
-                                                    self.pipelineStatus['merging data'],
-                                                    self.pipelineStatus['imputation'],
-                                                    self.pipelineStatus['missingness'],
-                                                    self.pipelineStatus['stationarity'],
-                                                    self.pipelineStatus['periodicity'],
-                                                    self.pipelineStatus['non-parametric model prep'],
-                                                    self.pipelineStatus['delay determination'],
-                                                    self.pipelineStatus['dataset balancing'],
-                                                    self.pipelineStatus['dimensionality reduction'],
-                                                    self.pipelineStatus['GP model gen.'],
-                                                    self.pipelineStatus['anomaly detect.'],
-                                                    self.pipelineStatus['association']
-                                                )
+            '>> Passive data[{}] & active data[{}]\n    |\n' \
+            '>> Trim[{}]\n    |\n' \
+            '>> Merging[{}] --------|\n' \
+            '    |                    |\n' \
+            '>> Imputation[{}]    Missingness[{}]\n    |\n' \
+            '>> Stationarity[{}]\n    |\n' \
+            '>> Periodicity[{}]\n    |\n' \
+            '>> Non-parametric model prep [{}]\n    |\n' \
+            '>> Delay determination [{}]\n    |\n' \
+            '>> Dataset balacing [{}]\n    |\n' \
+            '>> Dimensionality reduction [{}]\n    |\n' \
+            '>> Non-parametric model gen [{}]\n    |\n' \
+            '>> GP model gen.[{}]\n    |\n' \
+            '>> Anomaly detect.[{}]'\
+            .format(self.id,
+                self.pipelineStatus['passive data'],
+                self.pipelineStatus['active data'],
+                self.pipelineStatus['trim data'],
+                self.pipelineStatus['merging data'],
+                self.pipelineStatus['imputation'],
+                self.pipelineStatus['missingness'],
+                self.pipelineStatus['stationarity'],
+                self.pipelineStatus['periodicity'],
+                self.pipelineStatus['non-parametric model prep'],
+                self.pipelineStatus['delay determination'],
+                self.pipelineStatus['dataset balancing'],
+                self.pipelineStatus['dimensionality reduction'],
+                self.pipelineStatus['np-model gen'],
+                self.pipelineStatus['GP model gen.'],
+                self.pipelineStatus['anomaly detect.'],
+                self.pipelineStatus['association']
+            )
         rendered = classInfo + participantInfo + pipelineInfo
         return rendered

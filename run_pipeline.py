@@ -7,10 +7,13 @@ import sys
 from tools import Participant, Logger
 from preprocessing import KalmanImputation, Stationarity
 import pandas as pd
-from analysis import MissingnessDT, Periodicity, GpModel, ModelPrep, NonParaModel, Rebalance, FeatureSelection
+from analysis.missingness import MissingnessDT
+from analysis.model import Periodicity, GpModel, ModelPrep, NonParaModel
+from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapper
+
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -30,9 +33,11 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-#p.pipelineStatus['dataset balancing'] = False
-#p.saveSnapshot(p.path)
+p.pipelineStatus['np-model gen'] = False
+p.saveSnapshot(p.path)
 print(p)
+
+exit()
 
 log = Logger(log_path, 'sleepsight'+p.id+'.log', printLog=True)
 log.emit('Begin analysis pipeline', newRun=True)
@@ -182,15 +187,17 @@ if not p.isPipelineTaskCompleted('dimensionality reduction'):
 else:
     log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
 
-exit()
-
-# Task 'dimensionality reduction' (determine delay between active and passive data)
+# Task 'np-model gen' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('dimensionality reduction'):
-    log.emit('Continuing with DIMENSIONALITY REDUCTION...')
-    #p.updatePipelineStatusForTask('dimensionality reduction')
+    log.emit('Continuing with NP-MODEL GEN...')
+
+    #p.updatePipelineStatusForTask('np-model gen', log=log)
     #p.saveSnapshot(path, log=log)
 else:
-    log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
+    log.emit('Skipping NP-MODEL GEN - already completed.')
+
+
+exit()
 
 
 ######## PARAMETRIC #################################################

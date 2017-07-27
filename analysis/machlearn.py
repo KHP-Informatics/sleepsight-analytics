@@ -7,6 +7,7 @@ from collections import Counter
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import ADASYN, SMOTE
 import matplotlib.pyplot as plt
+from skfeature.function.information_theoretical_based import MRMR, MIFS
 
 class InfoGain:
 
@@ -268,9 +269,6 @@ class Rebalance:
             self.log.emit('Plot ABORTED: No dataset was rebalanced. Try runADASYN() or runSMOTE().', indents=1)
 
 
-from skfeature.function.information_theoretical_based import MRMR, MIFS
-
-
 class FeatureSelection:
 
     def __init__(self, data, log):
@@ -312,7 +310,6 @@ class FeatureSelection:
             newEntry = {datasetKey:addEntry}
             self.selectedFeatures[methodName] = newEntry
 
-
     def __str__(self):
         rendered = 'FEATURE SELECTION INFO:\n'
         for methodKey in self.selectedFeatures.keys():
@@ -321,7 +318,66 @@ class FeatureSelection:
                 rendered += '\t{}:\t{}\n'.format(datasetKey, self.selectedFeatures[methodKey][datasetKey]['fRank'][0:10])
         return rendered
 
+from scipy import interp
+from itertools import cycle
+
+from sklearn import svm, datasets
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import StratifiedKFold
 
 
+class NonParametricMLWrapper:
 
+    def __init__(self, data, features, log):
+        self.data = data
+        self.features = features
+        self.log = log
 
+    def fitSVM(self, nFeatures=10):
+
+        f = self.features['MIFS']['ADASYN']['fIdxs'][0:nFeatures]
+        X = self.extractNFeatures(self.data['ADASYN']['X'], f)
+        y = self.data['ADASYN']['y']
+
+        cv = StratifiedKFold(n_splits=5)
+        classifier = svm.SVC(kernel='linear', probability=True)
+        mean_tpr = 0.0
+        mean_fpr = np.linspace(0, 1, 100)
+
+        lw = 2
+
+        i = 0
+        for (train, test) in cv.split(X, y):
+            probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
+            # Compute ROC curve and area the curve
+            fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1])
+            mean_tpr += interp(mean_fpr, fpr, tpr)
+            mean_tpr[0] = 0.0
+            roc_auc = auc(fpr, tpr)
+            plt.plot(fpr, tpr, lw=lw,
+                     label='ROC fold %d (area = %0.2f)' % (i, roc_auc))
+
+            i += 1
+        plt.plot([0, 1], [0, 1], linestyle='--', lw=lw, color='k',
+                 label='Luck')
+
+        mean_tpr /= cv.get_n_splits(X, y)
+        mean_tpr[-1] = 1.0
+        mean_auc = auc(mean_fpr, mean_tpr)
+        plt.plot(mean_fpr, mean_tpr, color='g', linestyle='--',
+                 label='Mean ROC (area = %0.2f)' % mean_auc, lw=lw)
+
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+        plt.show()
+
+    def extractNFeatures(self, X, fIdxs):
+        Xextract = []
+        for x in X:
+            xFm = [x[i] for i in fIdxs]
+            Xextract.append(xFm)
+        return Xextract
