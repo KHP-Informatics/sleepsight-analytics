@@ -350,7 +350,7 @@ class FeatureSelectionEval:
             letter_counts = Counter(mComb[mFs])
             df = pd.DataFrame.from_dict(letter_counts, orient='index')
             df.columns = [mFs]
-            dfSorted = df.sort(columns=[mFs], ascending=False)
+            dfSorted = df.sort_values(by=[mFs], ascending=False)
             self.histogramsFs.append(dfSorted)
 
 
@@ -384,12 +384,11 @@ class FeatureSelectionEval:
 
         plt.close('all')
         plt.figure(figsize=(10, 9))
-        alphaLabel = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
         for i in range(0, len(self.histogramsFs)):
             plt.subplot(2, len(self.histogramsFs)/2, (i+1))
             self.histogramsFs[i].plot(kind='bar', ax=plt.gca())
             plt.ylim(ymax=yMax)
-            plt.title('{}) {}'.format(alphaLabel[i], self.histogramsFs[i].columns[0]), loc='left', size='16')
+            plt.title('{}'.format(self.histogramsFs[i].columns[0]), loc='left', size='14')
             plt.xlabel('Features')
             plt.ylabel('Count')
             plt.legend([])
