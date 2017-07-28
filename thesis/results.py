@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from analysis import InfoGain
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 class Compliance:
@@ -223,6 +224,7 @@ class StationaryTable:
             formatedIndex.append(val)
         return formatedIndex
 
+
 class DiscretisationTable:
 
     def __init__(self, aggr, log):
@@ -320,15 +322,16 @@ class FeatureSelectionEval:
         self.log = log
         self.aggr = aggr
         self.fComb = self.generateCombinedFeatureTable()
+        self.histogramsFs = []
 
     def generateCombinedFeatureTable(self):
         fsMethodsComb = dict()
         for p in self.aggr.aggregates:
             features = p.nonParametricFeaturesSelected
-            fsMethodsComb[p.id] = self.extractRankedFeatures(p, features)
-        print(fsMethodsComb)
+            fsMethodsComb[p.id] = self.extractRankedFeatures(features)
+        return fsMethodsComb
 
-    def extractRankedFeatures(self, p, features):
+    def extractRankedFeatures(self, features):
         featuresRanked = dict()
         for fsMethod in features:
             for dataset in features[fsMethod]:
@@ -340,6 +343,62 @@ class FeatureSelectionEval:
                     }
                     featuresRanked[fsMethod] = newEntry
         return featuresRanked
+
+    def generateHistogramForNTopFeatures(self, nFeatures):
+        mComb = self.reformatFCombToNFeaturesComb(nFeatures)
+        for mFs in mComb.keys():
+            letter_counts = Counter(mComb[mFs])
+            df = pd.DataFrame.from_dict(letter_counts, orient='index')
+            df.columns = [mFs]
+            dfSorted = df.sort(columns=[mFs], ascending=False)
+            self.histogramsFs.append(dfSorted)
+
+
+    def reformatFCombToNFeaturesComb(self, nFeatures):
+        reformatedFComb = dict()
+        for p in self.fComb.keys():
+            for fsMethod in self.fComb[p].keys():
+                for dataset in self.fComb[p][fsMethod]:
+                    tmpF = [self.fComb[p][fsMethod][dataset][i] for i in range(0, nFeatures)]
+                    try:
+                        reformatedFComb['{}-{}'.format(fsMethod, dataset)] += tmpF
+                    except KeyError:
+                        reformatedFComb['{}-{}'.format(fsMethod, dataset)] = tmpF
+        return reformatedFComb
+
+    def generateFigure(self, show=False, save=True):
+        self.log.emit('Generating figure...', indents=1)
+        plt = self.plot()
+        if save:
+            self.log.emit('Exporting figure...', indents=1)
+            path = self.aggr.pathPlot + 'FeatureSelection.png'
+            plt.savefig(path, dpi=600)
+        if show:
+            plt.show()
+
+    def plot(self, show=False):
+        maxCounts = []
+        for df in self.histogramsFs:
+            maxCounts.append(np.max(df))
+        yMax = np.max(list(maxCounts))
+
+        plt.close('all')
+        plt.figure(figsize=(10, 9))
+        alphaLabel = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        for i in range(0, len(self.histogramsFs)):
+            plt.subplot(2, len(self.histogramsFs)/2, (i+1))
+            self.histogramsFs[i].plot(kind='bar', ax=plt.gca())
+            plt.ylim(ymax=yMax)
+            plt.title('{}) {}'.format(alphaLabel[i], self.histogramsFs[i].columns[0]), loc='left', size='16')
+            plt.xlabel('Features')
+            plt.ylabel('Count')
+            plt.legend([])
+        plt.tight_layout()
+
+        if show:
+            plt.show()
+        return plt
+
 
 
 

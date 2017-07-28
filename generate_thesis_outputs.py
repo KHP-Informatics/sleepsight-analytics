@@ -108,6 +108,8 @@ if options['feature-delay']:
 if options['feature-selection']:
     log.emit('Generating FEATURE-SELECTION table...')
     fsAggr = FeatureSelectionEval(aggr, log)
+    fsAggr.generateHistogramForNTopFeatures(nFeatures=10)
+    fsAggr.generateFigure(show=True)
 
 # SVM-linear results
 if options['non-parametric-svm']:
