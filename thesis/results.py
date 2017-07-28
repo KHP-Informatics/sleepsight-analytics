@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 
 
 class Compliance:
-    def __init__(self, aggregates):
+    def __init__(self, aggregates, log):
+        self.log = log
         self.aggr = aggregates
         self.dfCount, self.dfDaily = self.aggr.getMissingness()
         self.passiveIdxNames = ['No Missingness', 'Not Charged', 'Not Worn', 'Transmission Failure']
@@ -69,16 +70,19 @@ class Compliance:
         return plt
 
     def generateFigure(self, show=False, save=True):
+        self.log.emit('Generating figure...', indents=1)
         self.normaliseMissingness()
         self.formatComplianceOverTime()
         plt = self.plot()
         if save:
+            self.log.emit('Exporting figure...', indents=1)
             path = self.aggr.pathPlot + 'Compliance.png'
             plt.savefig(path, dpi=600)
         if show:
             plt.show()
 
     def exportLatexTable(self, save=True):
+        self.log.emit('Exporting table...', indents=1)
         tmpTable = pd.concat((self.dfCountMean, self.dfCountSEM), axis=1)
         tmpTable.columns = ['Mean (%)', 'SD (%)']
         tmpTable.index = [str.capitalize(idx) for idx in tmpTable.index]
@@ -94,7 +98,8 @@ class Compliance:
 
 class InfoGainTable:
 
-    def __init__(self, infoTable, labels):
+    def __init__(self, infoTable, labels, log):
+        self.log = log
         self.labelsOfLabels = labels.keys()
         self.labels = labels
         self.info = infoTable
@@ -103,6 +108,7 @@ class InfoGainTable:
         self.entropies = []
 
     def run(self):
+        self.log.emit('Generating...', indents=1)
         resultTables = []
         for labelOfLabels in self.labelsOfLabels:
             labels = self.discretiseLabels(self.labels[labelOfLabels])
@@ -137,6 +143,7 @@ class InfoGainTable:
         return result
 
     def exportLatexTable(self, plotPath, orderedBy, save=True):
+        self.log.emit('Exporting table...', indents=1)
         tmpTable = self.outputTable
         tmpTable.index = self.formatFeatures(tmpTable.index)
         tmpTable = tmpTable.sort_index(level=1)
@@ -166,11 +173,13 @@ class InfoGainTable:
 
 class StationaryTable:
 
-    def __init__(self, aggr):
+    def __init__(self, aggr, log):
+        self.log = log
         self.aggr = aggr
         self.outputPath = aggr.pathPlot
 
     def run(self):
+        self.log.emit('Generating...', indents=1)
         statsExtract = []
         for participant in self.aggr.aggregates:
             statsExtractTmp = []
@@ -193,6 +202,7 @@ class StationaryTable:
         self.outputTable = self.outputTable.dropna(axis=0)
 
     def exportLatexTable(self, show=False, save=True):
+        self.log.emit('Exporting table...', indents=1)
         formatedTable = self.outputTable
         formatedTable.index = self.formatIndex(self.outputTable.index)
         latexTable = formatedTable.to_latex()
@@ -215,10 +225,12 @@ class StationaryTable:
 
 class DiscretisationTable:
 
-    def __init__(self, aggr):
+    def __init__(self, aggr, log):
+        self.log = log
         self.aggr = aggr
 
     def run(self):
+        self.log.emit('Generating...', indents=1)
         sampleSet = []
         id = 1
         for aggregate in self.aggr.aggregates:
@@ -234,6 +246,7 @@ class DiscretisationTable:
         self.sampleTable = pd.DataFrame(sampleSet, columns=['Participant', 'Mean', 'SD', 'Major class (%)', 'Minor class (%)'])
 
     def exportLatexTable(self, show=False, save=True):
+        self.log.emit('Exporting table...', indents=1)
         latexTable = self.sampleTable.to_latex(index=False)
         if save:
             path = self.aggr.pathPlot + 'DataSampleSymptomClass.tex'
@@ -243,10 +256,12 @@ class DiscretisationTable:
 
 class PeriodictyTable:
 
-    def __init__(self, aggr):
+    def __init__(self, aggr, log):
+        self.log = log
         self.aggr = aggr
 
     def run(self):
+        self.log.emit('Generating...', indents=1)
         periodicityStats = []
         periodicityStatsIndex = []
         acfPeakStatsCols = self.aggr.aggregates[0].acfPeakStats.keys()
@@ -285,6 +300,7 @@ class PeriodictyTable:
         return formatedIndex
 
     def exportLatexTable(self, show=False, save=True, summary=False):
+        self.log.emit('Exporting table...', indents=1)
         latexTable = self.outputTable.to_latex(index=False)
         fileName = 'DataPeriodicityStats.tex'
         if summary:
