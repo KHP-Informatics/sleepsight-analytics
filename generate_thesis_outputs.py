@@ -11,8 +11,8 @@ options = {'periodicity': False,
            'compliance': False,
            'stationarity': False,
            'symptom-score-discretisation': False,
-           'feature-delay': True,
-           'feature-selection': True,
+           'feature-delay': False,
+           'feature-selection': False,
            'non-parametric-svm': True
            }
 
