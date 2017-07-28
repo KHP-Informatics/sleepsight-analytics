@@ -1,5 +1,5 @@
 from tools import Logger
-from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable, PeriodictyTable, FeatureSelectionEval
+from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable, PeriodictyTable, FeatureSelectionEval, NonParametricSVMEval
 
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
@@ -114,4 +114,7 @@ if options['feature-selection']:
 # SVM-linear results
 if options['non-parametric-svm']:
     log.emit('Generating NON-PARAMETRIC-SVM table...')
+    npEval = NonParametricSVMEval(aggr, log)
+    npEval.test()
+
 

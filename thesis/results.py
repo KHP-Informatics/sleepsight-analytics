@@ -398,6 +398,16 @@ class FeatureSelectionEval:
             plt.show()
         return plt
 
+class NonParametricSVMEval:
+
+    def __init__(self, aggr, log):
+        self.log = log
+        self.aggr = aggr
+
+    def test(self):
+        for p in self.aggr.aggregates:
+            print(p.nonParametricResults['classificationReport'])
+
 
 
 
