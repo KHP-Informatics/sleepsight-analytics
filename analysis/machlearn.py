@@ -8,6 +8,11 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import ADASYN, SMOTE
 import matplotlib.pyplot as plt
 from skfeature.function.information_theoretical_based import MRMR, MIFS
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.svm import SVC
+
 
 class InfoGain:
 
@@ -317,14 +322,6 @@ class FeatureSelection:
             for datasetKey in self.selectedFeatures[methodKey].keys():
                 rendered += '\t{}:\t{}\n'.format(datasetKey, self.selectedFeatures[methodKey][datasetKey]['fRank'][0:10])
         return rendered
-
-from scipy import interp
-from itertools import cycle
-
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.svm import SVC
 
 
 class NonParametricMLWrapper:
