@@ -135,6 +135,38 @@ class Participant:
     def nonParametricFeatures(self, npf):
         self.__nonParametricFeatures = npf
 
+    @property
+    def featuresDelay(self):
+        return self.__featuresDelay
+
+    @featuresDelay.setter
+    def featuresDelay(self, npf):
+        self.__featuresDelay = npf
+
+    @property
+    def nonParametricDatasetRebalanced(self):
+        return self.__nonParametricDatasetRebalanced
+
+    @nonParametricDatasetRebalanced.setter
+    def nonParametricDatasetRebalanced(self, npf):
+        self.__nonParametricDatasetRebalanced = npf
+
+    @property
+    def nonParametricFeaturesSelected(self):
+        return self.__nonParametricFeaturesSelected
+
+    @nonParametricFeaturesSelected.setter
+    def nonParametricFeaturesSelected(self, npf):
+        self.__nonParametricFeaturesSelected = npf
+
+    @property
+    def nonParametricResults(self):
+        return self.__nonParametricResults
+
+    @nonParametricResults.setter
+    def nonParametricResults(self, npf):
+        self.__nonParametricResults = npf
+
     def __init__(self, id, path=''):
         self.id = self.formatID(id)
         self.path = path

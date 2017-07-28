@@ -314,5 +314,33 @@ class PeriodictyTable:
             f.write(latexTable)
             f.close()
 
+class FeatureSelectionEval:
+
+    def __init__(self, aggr, log):
+        self.log = log
+        self.aggr = aggr
+        self.fComb = self.generateCombinedFeatureTable()
+
+    def generateCombinedFeatureTable(self):
+        fsMethodsComb = dict()
+        for p in self.aggr.aggregates:
+            features = p.nonParametricFeaturesSelected
+            fsMethodsComb[p.id] = self.extractRankedFeatures(p, features)
+        print(fsMethodsComb)
+
+    def extractRankedFeatures(self, p, features):
+        featuresRanked = dict()
+        for fsMethod in features:
+            for dataset in features[fsMethod]:
+                try:
+                    featuresRanked[fsMethod][dataset] = features[fsMethod][dataset]['fRank']
+                except KeyError:
+                    newEntry = {
+                        dataset: features[fsMethod][dataset]['fRank']
+                    }
+                    featuresRanked[fsMethod] = newEntry
+        return featuresRanked
+
+
 
 

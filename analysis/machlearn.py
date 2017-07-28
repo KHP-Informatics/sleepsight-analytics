@@ -191,7 +191,7 @@ class Rebalance:
     def formatStartTimeIntoDeltaMinutes(self, st):
         stdt = []
         for d in st:
-            if 'NaN' not in d and type(d) is type(''):
+            if type(d) is type('') and 'NaN' not in d:
                 tmpD = dt.strptime(d, '%Y-%m-%dT%H:%M:%S.000')
                 tmpV = tmpD.hour * 60 + tmpD.minute
                 stdt.append(tmpV)

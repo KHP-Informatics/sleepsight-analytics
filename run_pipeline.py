@@ -161,7 +161,7 @@ else:
     log.emit('Skipping DELAY DETERMINATION - already completed.')
 
 # Task 'dataset balancing' (determine delay between active and passive data)
-if not p.isPipelineTaskCompleted('dataset balancing'):
+if  p.isPipelineTaskCompleted('dataset balancing'):
     log.emit('Continuing with DATASET BALANCING...')
     r = Rebalance(X=p.nonParametricFeatures, y=p.activeDataSymptom, log=log)
     r.runADASYN()
@@ -174,7 +174,7 @@ else:
     log.emit('Skipping DATASET BALANCING - already completed.')
 
 # Task 'dimensionality reduction' (determine delay between active and passive data)
-if not p.isPipelineTaskCompleted('dimensionality reduction'):
+if p.isPipelineTaskCompleted('dimensionality reduction'):
     log.emit('Continuing with DIMENSIONALITY REDUCTION...')
     fs = FeatureSelection(data=p.nonParametricDatasetRebalanced, log=log)
     fs.runMIFS()
@@ -184,6 +184,8 @@ if not p.isPipelineTaskCompleted('dimensionality reduction'):
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
+
+exit()
 
 # Task 'np-model gen' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('np-model gen'):

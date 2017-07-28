@@ -1,16 +1,17 @@
 from tools import Logger
-from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable, PeriodictyTable
+from thesis import Aggregates, Compliance, InfoGainTable, StationaryTable, DiscretisationTable, PeriodictyTable, FeatureSelectionEval
 
 
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
 
-options = {'periodicity': True,
-           'participant-info': True,
-           'compliance': True,
-           'stationarity': True,
-           'symptom-score-discretisation': True,
+options = {'periodicity': False,
+           'participant-info': False,
+           'compliance': False,
+           'stationarity': False,
+           'symptom-score-discretisation': False,
+           'feature-delay': True,
            'feature-selection': True,
            'non-parametric-svm': True
            }
@@ -18,7 +19,7 @@ options = {'periodicity': True,
 log = Logger(log_path, 'thesis_outputs.log', printLog=True)
 
 # Load Participants
-log.emit('Loading participants...')
+log.emit('Loading participants...', newRun=True)
 aggr = Aggregates('.pkl', path, plot_path)
 
 
@@ -98,9 +99,15 @@ if options['symptom-score-discretisation']:
     disTable.run()
     disTable.exportLatexTable(show=False, save=True)
 
+# feature delay??
+if options['feature-delay']:
+    log.emit('Generating FEATURE-DELAY table...')
+    log.emit('Currently non-existent. To be developed.', indents=1)
+
 # feature selection with MIFS & mRMR
 if options['feature-selection']:
     log.emit('Generating FEATURE-SELECTION table...')
+    fsAggr = FeatureSelectionEval(aggr, log)
 
 # SVM-linear results
 if options['non-parametric-svm']:
