@@ -33,11 +33,9 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-p.pipelineStatus['np-model gen'] = False
-p.saveSnapshot(p.path)
+#p.pipelineStatus['np-model gen'] = False
+#p.saveSnapshot(p.path)
 print(p)
-
-exit()
 
 log = Logger(log_path, 'sleepsight'+p.id+'.log', printLog=True)
 log.emit('Begin analysis pipeline', newRun=True)
@@ -188,11 +186,13 @@ else:
     log.emit('Skipping DIMENSIONALITY REDUCTION - already completed.')
 
 # Task 'np-model gen' (determine delay between active and passive data)
-if not p.isPipelineTaskCompleted('dimensionality reduction'):
+if not p.isPipelineTaskCompleted('np-model gen'):
     log.emit('Continuing with NP-MODEL GEN...')
-
-    #p.updatePipelineStatusForTask('np-model gen', log=log)
-    #p.saveSnapshot(path, log=log)
+    npw = NonParametricMLWrapper(p.nonParametricDatasetRebalanced, p.nonParametricFeaturesSelected, log=log)
+    npw.runSVM(nFeatures=10)
+    p.nonParametricResults = npw.results
+    p.updatePipelineStatusForTask('np-model gen', log=log)
+    p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping NP-MODEL GEN - already completed.')
 

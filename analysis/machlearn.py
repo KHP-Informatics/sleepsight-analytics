@@ -321,9 +321,10 @@ class FeatureSelection:
 from scipy import interp
 from itertools import cycle
 
-from sklearn import svm, datasets
-from sklearn.metrics import roc_curve, auc
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.svm import SVC
 
 
 class NonParametricMLWrapper:
@@ -332,48 +333,48 @@ class NonParametricMLWrapper:
         self.data = data
         self.features = features
         self.log = log
+        self.results = dict()
 
-    def fitSVM(self, nFeatures=10):
+    def runSVM(self, nFeatures, nCPUs=2):
+        for fsMethod in self.features:
+            for dataset in self.data:
+                self.log.emit('Fitting SVM on {}-{}...'.format(fsMethod, dataset), indents=1)
+                f = self.features[fsMethod][dataset]['fIdxs'][0:nFeatures]
+                X = self.extractNFeatures(self.data[dataset]['X'], f)
+                y = self.data[dataset]['y']
+                result = self.fitSVM(X, y, nCPUs=nCPUs)
+                self.addResults(result, fsMethod=fsMethod, dataset=dataset)
 
-        f = self.features['MIFS']['ADASYN']['fIdxs'][0:nFeatures]
-        X = self.extractNFeatures(self.data['ADASYN']['X'], f)
-        y = self.data['ADASYN']['y']
+    def fitSVM(self, X, y, nCPUs=2, lossFunctions=['recall']):
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.4, random_state=0)
+        optimisationParameters = [{'kernel': ['linear'], 'C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]}]
 
-        cv = StratifiedKFold(n_splits=5)
-        classifier = svm.SVC(kernel='linear', probability=True)
-        mean_tpr = 0.0
-        mean_fpr = np.linspace(0, 1, 100)
+        scores = lossFunctions
+        for score in scores:
+            self.log.emit("Tuning hyper-parameters for %s..." % score, indents=2)
 
-        lw = 2
+            clf = GridSearchCV(SVC(C=1), optimisationParameters, cv=3, n_jobs=nCPUs,
+                               scoring=score)
+            clf.fit(X_train, y_train)
 
-        i = 0
-        for (train, test) in cv.split(X, y):
-            probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
-            # Compute ROC curve and area the curve
-            fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1])
-            mean_tpr += interp(mean_fpr, fpr, tpr)
-            mean_tpr[0] = 0.0
-            roc_auc = auc(fpr, tpr)
-            plt.plot(fpr, tpr, lw=lw,
-                     label='ROC fold %d (area = %0.2f)' % (i, roc_auc))
+            self.log.emit("Best parameters set found on development set:", indents=2)
+            self.log.emit(clf.best_params_, indents=2)
 
-            i += 1
-        plt.plot([0, 1], [0, 1], linestyle='--', lw=lw, color='k',
-                 label='Luck')
+            self.log.emit("Grid scores on development set:", indents=2)
+            means = clf.cv_results_['mean_test_score']
+            stds = clf.cv_results_['std_test_score']
+            for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+                self.log.emit("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params), indents=2)
 
-        mean_tpr /= cv.get_n_splits(X, y)
-        mean_tpr[-1] = 1.0
-        mean_auc = auc(mean_fpr, mean_tpr)
-        plt.plot(mean_fpr, mean_tpr, color='g', linestyle='--',
-                 label='Mean ROC (area = %0.2f)' % mean_auc, lw=lw)
+            self.log.emit("Classification report:")
+            y_true, y_pred = y_test, clf.predict(X_test)
+            cReport = classification_report(y_true, y_pred)
+            self.log.emit(cReport, indents=2)
+            cMtrx = confusion_matrix(y_true, y_pred)
+            self.log.emit(cMtrx, indents=2)
 
-        plt.xlim([-0.05, 1.05])
-        plt.ylim([-0.05, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('Receiver operating characteristic example')
-        plt.legend(loc="lower right")
-        plt.show()
+            return self.formatExports(model=clf, confusionMatrix=cMtrx, classificationReport=cReport)
 
     def extractNFeatures(self, X, fIdxs):
         Xextract = []
@@ -381,3 +382,20 @@ class NonParametricMLWrapper:
             xFm = [x[i] for i in fIdxs]
             Xextract.append(xFm)
         return Xextract
+
+    def formatExports(self, model, confusionMatrix, classificationReport):
+        exports = {
+            'model': model,
+            'confusionMatrix': confusionMatrix,
+            'classificationReport': classificationReport
+        }
+        return exports
+
+    def addResults(self, result, fsMethod, dataset):
+        try:
+            self.results[fsMethod][dataset] = result
+        except KeyError:
+            newFsMethodResult = {
+                dataset: result
+            }
+            self.results[fsMethod] = newFsMethodResult
