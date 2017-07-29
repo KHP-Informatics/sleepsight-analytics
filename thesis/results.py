@@ -403,11 +403,95 @@ class NonParametricSVMEval:
     def __init__(self, aggr, log):
         self.log = log
         self.aggr = aggr
+        self.summary = pd.DataFrame()
 
-    def test(self):
+    def summarise(self):
+        self.log.emit('Summarising SVM results...', indents=1)
         for p in self.aggr.aggregates:
-            print(p.nonParametricResults['classificationReport'])
+            try:
+                row = self.createParticipantSVMSummary(p.nonParametricResults)
+                multiIndex = [(p.id, indexName) for indexName in row.index]
+                row.index = pd.MultiIndex.from_tuples(multiIndex)
+                self.summary = pd.concat([self.summary, row], axis=0)
 
+            except AttributeError:
+                self.log.emit('Participant {} has not had its SVM fitted yet.'.format(p.id), indents=1)
+
+
+    def logClassificationReports(self, results):
+        for m in results:
+            for d in results[m]:
+                self.log.emit('{}-{}:'.format(m, d), indents=1)
+                self.log.emit(results[m][d]['classificationReport'], indents=1)
+
+    def createParticipantSVMSummary(self, results):
+        participantRow = dict()
+        for m in results.keys():
+            for d in results[m].keys():
+                index = ['Precision', 'Recall', 'F1 Score']
+                precision = self.computePrecision(results[m][d]['confusionMatrix'])
+                recall = self.computeRecall(results[m][d]['confusionMatrix'])
+                f1Score = self.computeF1Score(precision, recall)
+                df = pd.DataFrame([precision, recall, f1Score], index=index, columns=[m])
+                try:
+                    participantRow[d] = pd.concat([participantRow[d], df], axis=1)
+                except KeyError:
+                    participantRow[d] = df
+
+        for d in participantRow.keys():
+            multiIndex = [(d, columnName) for columnName in participantRow[d].columns]
+            participantRow[d].columns = pd.MultiIndex.from_tuples(multiIndex)
+
+        datasets = list(participantRow.keys())
+        datasetsSorted = np.sort(datasets)
+        pRowList = [participantRow[d] for d in datasetsSorted]
+        participantRowConcat = pd.concat(pRowList, axis=1)
+
+        return participantRowConcat
+
+    def computePrecision(self, confusionMatrix):
+        tpC0 = confusionMatrix[0][0]
+        fpC0 = confusionMatrix[1][0]
+        p0 = tpC0 / (tpC0+fpC0)
+        tpC1 = confusionMatrix[1][1]
+        fpC1 = confusionMatrix[0][1]
+        p1 = tpC1 / (tpC1+fpC1)
+        p = np.mean([p0, p1])
+        p = self.rescueScore(p)
+        return p
+
+    def computeRecall(self, confusionMatrix):
+        tpC0 = confusionMatrix[0][0]
+        tnC0 = confusionMatrix[0][1]
+        r0 = tpC0 / (tpC0 + tnC0)
+        tpC1 = confusionMatrix[1][1]
+        tnC1 = confusionMatrix[1][0]
+        r1 = tpC1 / (tpC1 + tnC1)
+        r = np.mean([r0, r1])
+        r = self.rescueScore(r)
+        return r
+
+    def computeF1Score(self, precision, recall):
+        f = 2*precision*recall / (precision+recall)
+        return f
+
+    def rescueScore(self, score):
+        if score < 0.5:
+            return 1 - score
+        return score
+
+    def exportLatexTable(self, show=False, save=True):
+        self.log.emit('Exporting table...', indents=1)
+        outputTable = self.summary.round(2)
+        latexTable = outputTable.to_latex(index=True, na_rep='-')
+        fileName = 'DataNonParametric-SVM-Summary.tex'
+        if show:
+            print(latexTable)
+        if save:
+            path = self.aggr.pathPlot + fileName
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
 
 
 

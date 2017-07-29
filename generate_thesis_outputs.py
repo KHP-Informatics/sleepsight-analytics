@@ -11,7 +11,7 @@ options = {'periodicity': False,
            'compliance': False,
            'stationarity': False,
            'symptom-score-discretisation': False,
-           'feature-delay': False,
+           'feature-delay': True,
            'feature-selection': False,
            'non-parametric-svm': True
            }
@@ -115,6 +115,7 @@ if options['feature-selection']:
 if options['non-parametric-svm']:
     log.emit('Generating NON-PARAMETRIC-SVM table...')
     npEval = NonParametricSVMEval(aggr, log)
-    npEval.test()
+    npEval.summarise()
+    npEval.exportLatexTable(show=True)
 
 
