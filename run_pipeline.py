@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapp
 
 
 # Overarching SleepSight pipeline script
-participantID = 11
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -150,7 +150,7 @@ if not p.isPipelineTaskCompleted('delay determination'):
     for feature in features:
         pdy = Periodicity(identifier=p.id, sensorName=feature, path=plot_path, log=log)
         pdy.addObservtions(p.nonParametricFeatures[feature])
-        delay = pdy.cross_cor(targetObservation=p.activeDataSymptom['total'], lag=14)
+        delay = pdy.cross_cor(targetObservation=p.activeDataSymptom['total'], lag=7)
         delayCCF.append(delay)
     dfDelay = pd.DataFrame(delayCCF, columns=['Participant {}'.format(p.id)])
     dfDelay.index = features

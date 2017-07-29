@@ -321,9 +321,25 @@ class DelayEval:
     def __init__(self, aggr, log):
         self.log = log
         self.aggr = aggr
+        self.delayTable = pd.DataFrame()
 
-    def test(self):
-        print('test')
+    def generateDelayTable(self):
+        for p in self.aggr.aggregates:
+            try:
+                self.delayTable = pd.concat([self.delayTable, p.featuresDelay], axis=1)
+            except AttributeError:
+                print('Not availble for P{}'.format(p.id))
+
+    def exportLatexTable(self, show=False, save=True):
+        self.log.emit('Exporting table...', indents=1)
+        latexTable = self.delayTable.to_latex(index=True)
+        if save:
+            path = self.aggr.pathPlot + 'DataDelayTable.tex'
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
+        if show:
+            print(self.delayTable)
 
 class FeatureSelectionEval:
 

@@ -11,9 +11,9 @@ options = {'periodicity': False,
            'compliance': False,
            'stationarity': False,
            'symptom-score-discretisation': False,
-           'feature-delay': True,
+           'feature-delay': False,
            'feature-selection': False,
-           'non-parametric-svm': False
+           'non-parametric-svm': True
            }
 
 log = Logger(log_path, 'thesis_outputs.log', printLog=True)
@@ -88,7 +88,7 @@ if options['compliance']:
 # Stationarity results
 if options['stationarity']:
     log.emit('Generating STATIONARITY table...')
-    stTable = StationaryTable(aggr, log)
+    stTable = T.StationaryTable(aggr, log)
     stTable.run()
     stTable.exportLatexTable(show=False, save=True)
 
@@ -99,11 +99,12 @@ if options['symptom-score-discretisation']:
     disTable.run()
     disTable.exportLatexTable(show=False, save=True)
 
-# feature delay??
+# feature delay
 if options['feature-delay']:
     log.emit('Generating FEATURE-DELAY table...')
     dEval = T.DelayEval(aggr, log)
-    dEval.test()
+    dEval.generateDelayTable()
+    dEval.exportLatexTable()
 
 # feature selection with MIFS & mRMR
 if options['feature-selection']:
