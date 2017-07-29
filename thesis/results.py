@@ -316,6 +316,15 @@ class PeriodictyTable:
             f.write(latexTable)
             f.close()
 
+class DelayEval:
+
+    def __init__(self, aggr, log):
+        self.log = log
+        self.aggr = aggr
+
+    def test(self):
+        print('test')
+
 class FeatureSelectionEval:
 
     def __init__(self, aggr, log):
@@ -397,6 +406,7 @@ class FeatureSelectionEval:
         if show:
             plt.show()
         return plt
+
 
 class NonParametricSVMEval:
 
