@@ -6,7 +6,8 @@ from thesis.results import Compliance, \
     PeriodictyTable, \
     FeatureSelectionEval, \
     NonParametricSVMEval, \
-    DelayEval
+    DelayEval, \
+    compute_SVM_on_all_participants
 __all__ = ['aggregates',
            'compliance',
            'infogaintable',
@@ -15,5 +16,6 @@ __all__ = ['aggregates',
            'periodicitytable',
            'featureselectioneval',
            'nonparametricsvmeval',
-           'delayeval'
+           'delayeval',
+           'compute_SVM_on_all_participants'
            ]

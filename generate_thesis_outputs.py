@@ -1,4 +1,6 @@
-from tools import Logger
+
+import numpy as np
+from tools import Logger, Participant
 import thesis as T
 
 
@@ -116,8 +118,29 @@ if options['feature-selection']:
 # SVM-linear results
 if options['non-parametric-svm']:
     log.emit('Generating NON-PARAMETRIC-SVM table...')
+
+    fs = T.FeatureSelectionEval(aggr, log)
+    fs.generateHistogramForNTopFeatures(nFeatures=10)
+    fMifs = []
+    fMrmr = []
+    for table in fs.histogramsFs:
+        if 'MIFS-ADASYN' in table.columns:
+            fMifs = list(table.index[0:10])
+        if 'mRMR-ADASYN' in table.columns:
+            fMrmr = list(table.index[0:10])
+    totalF = {
+        'mRMR': {'ADASYN': {'fRank': fMifs}},
+        'MIFS': {'ADASYN': {'fRank': fMrmr}}
+    }
+
+    results = T.compute_SVM_on_all_participants(aggr, totalF, log)
+
+    pTotal = Participant(id=99, path=path)
+    pTotal.id = 'Total'
+    pTotal.nonParametricResults = results
+    aggr.aggregates.append(pTotal)
+
     npEval = T.NonParametricSVMEval(aggr, log)
     npEval.summarise()
     npEval.exportLatexTable(show=True)
-
 

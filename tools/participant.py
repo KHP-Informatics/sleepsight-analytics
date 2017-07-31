@@ -199,7 +199,7 @@ class Participant:
         return id_str
 
     def load(self):
-        print('[Participant] Loading data...')
+        print('[Participant {}] Loading data...'.format(self.id))
         files = os.listdir(self.path)
         filtered_files = [file for file in files if self.id in file]
         (activeSensFiles, passiveSensFiles) = self.splitFilesIntoActiveAndPassive(filtered_files)

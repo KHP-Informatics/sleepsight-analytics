@@ -3,6 +3,7 @@ import pandas as pd
 from analysis import InfoGain
 import matplotlib.pyplot as plt
 from collections import Counter
+from analysis import NonParametricMLWrapper
 
 
 class Compliance:
@@ -343,28 +344,31 @@ class DelayEval:
 
 class FeatureSelectionEval:
 
-    def __init__(self, aggr, log):
+    def __init__(self, aggr, log, asIndex=False):
         self.log = log
         self.aggr = aggr
-        self.fComb = self.generateCombinedFeatureTable()
+        self.fComb = self.generateCombinedFeatureTable(asIndex=asIndex)
         self.histogramsFs = []
 
-    def generateCombinedFeatureTable(self):
+    def generateCombinedFeatureTable(self, asIndex=False):
         fsMethodsComb = dict()
         for p in self.aggr.aggregates:
             features = p.nonParametricFeaturesSelected
-            fsMethodsComb[p.id] = self.extractRankedFeatures(features)
+            fsMethodsComb[p.id] = self.extractRankedFeatures(features, asIndex=asIndex)
         return fsMethodsComb
 
-    def extractRankedFeatures(self, features):
+    def extractRankedFeatures(self, features, asIndex=False):
+        fKey = 'fRank'
+        if asIndex:
+            fKey = 'fIdxs'
         featuresRanked = dict()
         for fsMethod in features:
             for dataset in features[fsMethod]:
                 try:
-                    featuresRanked[fsMethod][dataset] = features[fsMethod][dataset]['fRank']
+                    featuresRanked[fsMethod][dataset] = features[fsMethod][dataset][fKey]
                 except KeyError:
                     newEntry = {
-                        dataset: features[fsMethod][dataset]['fRank']
+                        dataset: features[fsMethod][dataset][fKey]
                     }
                     featuresRanked[fsMethod] = newEntry
         return featuresRanked
@@ -520,5 +524,33 @@ class NonParametricSVMEval:
             f.close()
 
 
+######## SUPPORT FUNCTIONS
+def compute_SVM_on_all_participants(aggr, totalF, log):
+    Xmrmr = list()
+    Xmifs = list()
+    y = list()
+    for p in aggr.aggregates:
+        iMRMR = np.isin(p.nonParametricFeaturesSelected['mRMR']['ADASYN']['fOrig'], totalF['mRMR']['ADASYN']['fRank'])
+        totalF['mRMR']['ADASYN']['fIdxs'] = np.where(iMRMR)[0]
+        iMIFS = np.isin(p.nonParametricFeaturesSelected['MIFS']['ADASYN']['fOrig'], totalF['MIFS']['ADASYN']['fRank'])
+        totalF['MIFS']['ADASYN']['fIdxs'] = np.where(iMIFS)[0]
+        for entry in p.nonParametricDatasetRebalanced['ADASYN']['X']:
+            Xmrmr.append([entry[i] for i in totalF['mRMR']['ADASYN']['fIdxs']])
+            Xmifs.append([entry[i] for i in totalF['MIFS']['ADASYN']['fIdxs']])
+        for entry in p.nonParametricDatasetRebalanced['ADASYN']['y']:
+            y.append(entry)
+    totalDS = {
+        'mRMR': {'ADASYN': {'X': Xmrmr, 'y': y}},
+        'MIFS': {'ADASYN': {'X': Xmifs, 'y': y}}
+    }
+
+    npwMRMR = NonParametricMLWrapper(totalDS['mRMR'], {'mRMR': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
+                                     log=log)
+    npwMRMR.runSVM(nFeatures=10)
+    results = npwMRMR.results
+    npwMIFS = NonParametricMLWrapper(totalDS['MIFS'], {'MIFS': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
+                                     log=log)
+    npwMIFS.runSVM(nFeatures=10)
+    results['MIFS'] = npwMIFS.results['MIFS']
 
 
