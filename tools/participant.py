@@ -182,6 +182,7 @@ class Participant:
             'non-parametric model prep': False,
             'delay determination': False,
             'dataset balancing': False,
+            'dimensionality reduction': False,
             'np-model gen': False,
             'GP model gen.': False,
             'anomaly detect.': False,
