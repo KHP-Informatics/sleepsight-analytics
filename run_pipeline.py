@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapp
 
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 10
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -132,7 +132,7 @@ if not p.isPipelineTaskCompleted('non-parametric model prep'):
     mp.removeEntriesPriorToStudyStart(p.info)
     p.activeDataSymptom = mp.discretisedRawScoreTable
     p.stationarySymptomData = mp.discretisedStationarySymptomScoreTable
-    npm = NonParaModel(yFeature='total', dayDivisionHour=12)
+    npm = NonParaModel(yFeature='total', dayDivisionHour=12, log=log)
     npm.submitData(participant=p, xFeatures=p.passiveSensors)
     npm.constructModel()
     p.nonParametricFeatures = npm.features

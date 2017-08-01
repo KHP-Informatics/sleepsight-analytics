@@ -144,3 +144,6 @@ if options['non-parametric-svm']:
     npEval.summarise()
     npEval.exportLatexTable(show=True)
 
+    log.emit('\n{}'.format(np.mean(npEval.summary)), indents=1)
+    log.emit('\n{}'.format(np.std(npEval.summary)), indents=1)
+
