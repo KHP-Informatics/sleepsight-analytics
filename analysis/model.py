@@ -47,7 +47,12 @@ class ModelPrep:
     def removeEntriesPriorToStudyStart(self, info):
         dStart = datetime.datetime.strptime(info['startDate'], '%d/%m/%Y')
         dates = self.discretisedRawScoreTable['datetime']
-        dDates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in dates]
+        dDates = []
+        for d in dates:
+            if type(d) is type(' '):
+                dDates.append(datetime.datetime.strptime(d, '%Y-%m-%d %H:%M'))
+            else:
+                dDates.append(datetime.datetime(1970, 1, 1, 0, 0, 0))
         validDatesIdxs = []
         for i in range(0, len(dDates)):
             if dDates[i] > dStart:
@@ -92,7 +97,7 @@ class NonParaModel:
         self.createIndexTable()
         self.log.emit('[STATUS] Extracting rest-activity features.', indents=1)
         dfRestActivity = self.extractRestActivityFeatures(leadFeature='intra_steps')
-        self.log.emit('[STATUS] Extracting disorganisation features.')
+        self.log.emit('[STATUS] Extracting disorganisation features.', indents=1)
         dfDisorganisation = self.extractDisorganisationFeatures()
         self.log.emit('[STATUS] Extracting sleep features.', indents=1)
         dfSleep = self.extractSleepFeatures()
