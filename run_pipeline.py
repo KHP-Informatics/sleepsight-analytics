@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapp
 
 
 # Overarching SleepSight pipeline script
-participantID = 4
+participantID = 12
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -202,9 +202,11 @@ else:
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):
     log.emit('Continuing with GP-MODEL GEN...')
-    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='total', dayDivisionHour=12, log=log)
-    gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
+    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='label', dayDivisionHour=12, log=log)
+    gpm.submitData(active=p.activeDataSymptom, passive=p.stationaryPassiveData)
     gpm.createIndexTable()
-    print(gpm.indexDict)
+    major = gpm.getSamplesOfClassX('major')
+    minor = gpm.getSamplesOfClassX('minor')
+    print(minor)
 else:
     log.emit('Skipping GP-MODEL GEN - already completed.')

@@ -347,11 +347,14 @@ class GpModel:
         self.indexDict = []
         self.extractDateIdxsFromYData()
         self.extractDateIdxsFromXDataBasedOnY()
+        self.classIndexes = self.genClassIndex()
+
 
     def extractDateIdxsFromYData(self):
         for i in range(len(self.yData)):
             entry = {'index': i}
-            entry['y'] = float(self.yData[i:i+1][self.yFeature])
+            yDataSelect = self.yData[self.yFeature]
+            entry['y'] = yDataSelect.loc[i]
             startDate, endDate = self.determineDatesFromYData(i)
             entry['dateStart'] = startDate
             entry['dateEnd'] = endDate
@@ -385,6 +388,27 @@ class GpModel:
                 currentTableIndex += 1
                 if currentTableIndex >= len(self.indexDict):
                     break
+
+    def genClassIndex(self):
+        labels = self.yData[self.yFeature]
+        uniqueLabels = np.unique(labels)
+        classIndexes = {}
+        for label in uniqueLabels:
+            classIndexes[label] = self.retrieveLabelIndexes(label)
+        return classIndexes
+
+    def retrieveLabelIndexes(self, label):
+        labelIndex = []
+        for i in range(0, len(self.indexDict)):
+            if self.indexDict[i]['y'] == label:
+                labelIndex.append(i)
+        return labelIndex
+
+    def getSamplesOfClassX(self, label):
+        sampleIdxs = self.classIndexes[label]
+        samples = [self.indexDict[idx] for idx in sampleIdxs]
+        return samples
+
 
 
 # testing signal's serial dependency
