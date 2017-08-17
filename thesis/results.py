@@ -448,11 +448,16 @@ class NonParametricSVMEval:
                 self.log.emit('Participant {} has not had its SVM fitted yet.'.format(p.id), indents=1)
 
 
-    def logClassificationReports(self, results):
-        for m in results:
-            for d in results[m]:
-                self.log.emit('{}-{}:'.format(m, d), indents=1)
-                self.log.emit(results[m][d]['classificationReport'], indents=1)
+    def logClassificationReports(self):
+        for p in self.aggr.aggregates:
+            self.log.emit(p.id, indents=1)
+            try:
+                for m in p.nonParametricResults:
+                    for d in p.nonParametricResults[m]:
+                        self.log.emit('{}-{}:'.format(m, d), indents=2)
+                        self.log.emit(p.nonParametricResults[m][d]['classificationReport'], indents=2)
+            except AttributeError:
+                self.log.emit('Cannot log classificationReport, due to missing attribute.', indents=2)
 
     def createParticipantSVMSummary(self, results):
         participantRow = dict()
@@ -476,7 +481,6 @@ class NonParametricSVMEval:
         datasetsSorted = np.sort(datasets)
         pRowList = [participantRow[d] for d in datasetsSorted]
         participantRowConcat = pd.concat(pRowList, axis=1)
-
         return participantRowConcat
 
     def computePrecision(self, confusionMatrix):
@@ -552,5 +556,6 @@ def compute_SVM_on_all_participants(aggr, totalF, log):
                                      log=log)
     npwMIFS.runSVM(nFeatures=10)
     results['MIFS'] = npwMIFS.results['MIFS']
+    return results
 
 

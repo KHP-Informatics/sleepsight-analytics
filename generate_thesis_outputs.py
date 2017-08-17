@@ -15,7 +15,8 @@ options = {'periodicity': False,
            'symptom-score-discretisation': False,
            'feature-delay': False,
            'feature-selection': False,
-           'non-parametric-svm': True
+           'non-parametric-svm': False,
+           'non-parametric-gp': True
            }
 
 log = Logger(log_path, 'thesis_outputs.log', printLog=True)
@@ -134,16 +135,18 @@ if options['non-parametric-svm']:
     }
 
     results = T.compute_SVM_on_all_participants(aggr, totalF, log)
-
     pTotal = Participant(id=99, path=path)
     pTotal.id = 'Total'
     pTotal.nonParametricResults = results
     aggr.aggregates.append(pTotal)
-
     npEval = T.NonParametricSVMEval(aggr, log)
+    npEval.logClassificationReports()
     npEval.summarise()
     npEval.exportLatexTable(show=True)
 
     log.emit('\n{}'.format(np.mean(npEval.summary)), indents=1)
     log.emit('\n{}'.format(np.std(npEval.summary)), indents=1)
 
+# GP results
+if options['non-parametric-gp']:
+    pass

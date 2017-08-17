@@ -159,7 +159,7 @@ class Rebalance:
         tmpYnumeric = []
         for i in range(0, len(tmpY)):
             c = 1
-            if 'minor' in tmpY[i]:
+            if type(tmpY[i]) is type(' ') and 'minor' in tmpY[i]:
                 c = 0
             tmpYnumeric.append(c)
         y = [tmpYnumeric[idx] for idx in yIdxs]
@@ -345,7 +345,8 @@ class NonParametricMLWrapper:
     def fitSVM(self, X, y, nCPUs=2, lossFunctions=['recall']):
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.4, random_state=0)
-        optimisationParameters = [{'kernel': ['linear'], 'C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]}]
+        #gamma_range = np.logspace(-9, 3, 13)
+        optimisationParameters = {'kernel': ['linear'], 'C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]}
 
         scores = lossFunctions
         for score in scores:

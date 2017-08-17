@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapp
 
 
 # Overarching SleepSight pipeline script
-participantID = 3
+participantID = 4
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -195,9 +195,6 @@ if not p.isPipelineTaskCompleted('np-model gen'):
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping NP-MODEL GEN - already completed.')
-
-
-exit()
 
 
 ######## PARAMETRIC #################################################
