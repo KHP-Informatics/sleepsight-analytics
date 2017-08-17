@@ -324,7 +324,7 @@ class FeatureSelection:
         return rendered
 
 
-class NonParametricMLWrapper:
+class SVMMLWrapper:
 
     def __init__(self, data, features, log):
         self.data = data
@@ -397,3 +397,10 @@ class NonParametricMLWrapper:
                 dataset: result
             }
             self.results[fsMethod] = newFsMethodResult
+
+
+
+class GPMLWrapper:
+
+    def __init__(self, gpm):
+        self.gpm

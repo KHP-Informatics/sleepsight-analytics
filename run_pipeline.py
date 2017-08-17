@@ -9,7 +9,7 @@ from preprocessing import KalmanImputation, Stationarity
 import pandas as pd
 from analysis.missingness import MissingnessDT
 from analysis.model import Periodicity, GpModel, ModelPrep, NonParaModel
-from analysis.machlearn import Rebalance, FeatureSelection, NonParametricMLWrapper
+from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWrapper
 
 
 # Overarching SleepSight pipeline script
@@ -123,7 +123,7 @@ else:
     log.emit('Skipping PERIODICITY - already completed.')
 
 
-######## NON PARAMETRIC #################################################
+######## NON PARAMETRIC SVM #################################################
 # Task 'non-parametric modelprep'
 if not p.isPipelineTaskCompleted('non-parametric model prep'):
     log.emit('Continuing with NON-PARAMETRIC MODEL PREP...')
@@ -188,16 +188,16 @@ else:
 # Task 'np-model gen' (determine delay between active and passive data)
 if not p.isPipelineTaskCompleted('np-model gen'):
     log.emit('Continuing with NP-MODEL GEN...')
-    npw = NonParametricMLWrapper(p.nonParametricDatasetRebalanced, p.nonParametricFeaturesSelected, log=log)
-    npw.runSVM(nFeatures=10)
-    p.nonParametricResults = npw.results
+    svmw = SVMMLWrapper(p.nonParametricDatasetRebalanced, p.nonParametricFeaturesSelected, log=log)
+    svmw.runSVM(nFeatures=10)
+    p.nonParametricResults = svmw.results
     p.updatePipelineStatusForTask('np-model gen', log=log)
     p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping NP-MODEL GEN - already completed.')
 
 
-######## PARAMETRIC #################################################
+######## NON PARAMETRIC GP #################################################
 
 # Task 'gp-model gen' (Determining time window of repeating sequences)
 if not p.isPipelineTaskCompleted('GP model gen.'):

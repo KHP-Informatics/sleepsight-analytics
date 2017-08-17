@@ -3,7 +3,7 @@ import pandas as pd
 from analysis import InfoGain
 import matplotlib.pyplot as plt
 from collections import Counter
-from analysis import NonParametricMLWrapper
+from analysis import SVMMLWrapper
 
 
 class Compliance:
@@ -548,11 +548,11 @@ def compute_SVM_on_all_participants(aggr, totalF, log):
         'MIFS': {'ADASYN': {'X': Xmifs, 'y': y}}
     }
 
-    npwMRMR = NonParametricMLWrapper(totalDS['mRMR'], {'mRMR': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
+    npwMRMR = SVMMLWrapper(totalDS['mRMR'], {'mRMR': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
                                      log=log)
     npwMRMR.runSVM(nFeatures=10)
     results = npwMRMR.results
-    npwMIFS = NonParametricMLWrapper(totalDS['MIFS'], {'MIFS': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
+    npwMIFS = SVMMLWrapper(totalDS['MIFS'], {'MIFS': {'ADASYN': {'fIdxs': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}}},
                                      log=log)
     npwMIFS.runSVM(nFeatures=10)
     results['MIFS'] = npwMIFS.results['MIFS']
