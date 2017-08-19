@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWr
 
 
 # Overarching SleepSight pipeline script
-participantID = 6
+participantID = 15
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -203,10 +203,10 @@ else:
 if not p.isPipelineTaskCompleted('GP model gen.'):
     log.emit('Continuing with GP-MODEL GEN...')
     gpm = GpModel(xFeatures=p.passiveSensors, yFeature='label', dayDivisionHour=12, log=log)
-    gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
+    gpm.submitData(active=p.activeDataSymptom, passive=p.stationaryPassiveData)
     gpm.createIndexTable()
     gpw = GPMLWrapper(gpm, plot_path, log=log)
-    gpw.prepareGP(feature='heart_Minutes')
+    gpw.prepareGP(feature='light')
     gpw.fit(nSplits=3)
     gpw.simulate()
 

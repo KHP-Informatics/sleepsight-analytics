@@ -427,10 +427,7 @@ class GPMLWrapper:
             self.m.optimize(messages=True, max_iters=200)
             for idx in range(0, len(splits['Xtest'][i])):
                 posterior = self.m.predict(Xnew=np.array([splits['Xtest'][i][idx]]))
-                if posterior[0][0] > self.decisionBoundary:
-                    predictions.append(1)
-                else:
-                    predictions.append(0)
+                predictions.append(self.formatPosterior(posterior[0][0]))
         targets = []
         for i in range(0, nSplits):
             targets += list(np.transpose(splits['Ytest'][i])[0])
@@ -440,7 +437,38 @@ class GPMLWrapper:
 
 
     def simulate(self):
-        pass
+        self.log.emit('Begin simulation...', indents=1)
+        T = self.getLabels(label='all')
+        Tts = list([T[i] for i in range(1, len(T))])
+        Y = np.transpose(self.getY(self.feature, label='all'))
+        ts = [Y[i] for i in range(1, len(Y))]
+        inputVector = Y[0]
+
+        output = {'x':[], 'y':[]}
+        target = {'x':[], 'y':[]}
+        xIdx = 0
+        target['x'].append(0)
+        target['y'].append(T[0][0])
+        for i in range(0, len(ts)):
+            for j in range(0, len(ts[i])):
+                inputVector[j] = ts[i][j]
+                posterior = self.m.predict(Xnew=np.array([inputVector]))
+                output['x'].append(xIdx)
+                output['y'].append(self.formatPosterior(posterior[0][0]))
+                xIdx += 1
+            target['x'].append(xIdx)
+            target['y'].append(Tts[i][0])
+
+        plt.plot(output['x'], output['y'])
+        plt.plot(target['x'], target['y'], 'ro')
+        plt.savefig(self.path + 'GP_sim')
+
+    def formatPosterior(self, val):
+        if val == self.decisionBoundary:
+            return val
+        if val < self.decisionBoundary:
+            return 0
+        return 1
 
     def getX(self):
         rangeIndex = self.gpm.indexDict[0]['indexEnd'] - self.gpm.indexDict[0]['indexStart']
