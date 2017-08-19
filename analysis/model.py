@@ -147,6 +147,7 @@ class NonParaModel:
                 currentTableIndex += 1
                 if currentTableIndex >= len(self.indexDict):
                     break
+
     def removeIncompleteIndexs(self):
         newIndexDict = []
         for index in self.indexDict:
@@ -404,16 +405,13 @@ class GpModel:
                 labelIndex.append(i)
         return labelIndex
 
-    def getSamplesOfClassX(self, label):
+    def getSamplesOfClassT(self, label):
+        if label is 'all':
+            return self.indexDict
         sampleIdxs = self.classIndexes[label]
         samples = [self.indexDict[idx] for idx in sampleIdxs]
         return samples
 
-
-
-# testing signal's serial dependency
-# determining periodicity using ACF (auto-correlation function)
-# testing periodicity using Pearson's correlation
 
 class Periodicity:
 

@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.svm import SVC
+import GPy
 
 
 class InfoGain:
@@ -398,9 +399,134 @@ class SVMMLWrapper:
             }
             self.results[fsMethod] = newFsMethodResult
 
-
+from sklearn.gaussian_process import GaussianProcess
+from sklearn import metrics
+from sklearn.model_selection import StratifiedShuffleSplit
 
 class GPMLWrapper:
 
-    def __init__(self, gpm):
-        self.gpm
+    def __init__(self, gpm, plotPath, log, decisionBoundary=0.5):
+        self.log = log
+        self.gpm = gpm
+        self.path = plotPath
+        self.decisionBoundary = decisionBoundary
+
+    def prepareGP(self, feature):
+        self.log.emit('Extracting features...', indents=1)
+        self.feature = feature
+        self.Y = np.transpose(self.getY(self.feature, label='all'))
+        self.T = self.getLabels(label='all')
+
+    def fit(self, nSplits=1):
+        predictions = []
+        splits = self.splitSamples(self.Y, self.T, nSplits=nSplits)
+        for i in range(0, nSplits):
+            kernel = GPy.kern.GridRBF(input_dim=1439)
+            self.m = GPy.models.GPClassification(X=self.Y, Y=self.T, kernel=kernel)
+            self.m.optimize(messages=True, max_iters=200)
+            for idx in range(0, len(splits['Xtest'][i])):
+                posterior = self.m.predict(Xnew=np.array([splits['Xtest'][i][idx]]))
+                if posterior[0][0] > self.decisionBoundary:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+        targets = []
+        for i in range(0, nSplits):
+            targets += list(np.transpose(splits['Ytest'][i])[0])
+        self.confusionMtrxFit = confusion_matrix(targets, predictions, [1, 0])
+        self.log.emit("Fit Classification Report {}:\n{}".format(
+            self.feature,
+            metrics.classification_report(targets, predictions)
+        ), indents=1)
+
+
+
+    def simulate(self):
+        pass
+
+    def getX(self):
+        rangeIndex = self.gpm.indexDict[0]['indexEnd'] - self.gpm.indexDict[0]['indexStart']
+        X = np.array([np.array([i]) for i in range(0, rangeIndex)])
+        return X
+
+    def getY(self, feature, label='all'):
+        samples = self.gpm.getSamplesOfClassT(label)
+        rangeIndex = samples[0]['indexEnd'] - samples[0]['indexStart']
+        yData = self.gpm.passiveData[feature]
+        Y = []
+        for i in range(0, rangeIndex):
+            dataPointsAtX = []
+            for sample in samples:
+                dataPoint = yData[(sample['indexStart'] + i)]
+                dataPointsAtX.append(dataPoint)
+            Y.append(np.array(dataPointsAtX))
+        return np.array(Y)
+
+    def getYSampled(self, feature, label='all'):
+        samples = self.gpm.getSamplesOfClassT(label)
+        rangeIndex = samples[0]['indexEnd'] - samples[0]['indexStart']
+        yData = self.gpm.passiveData[feature]
+        Y = []
+        for i in range(0, rangeIndex):
+            dataPointsAtX = []
+            for sample in samples:
+                dataPoint = yData[(sample['indexStart'] + i)]
+                dataPointsAtX.append(dataPoint)
+            randomSample = np.random.choice(dataPointsAtX)
+            Y.append(np.array([randomSample]))
+        return np.array(Y)
+
+    def getLabels(self, label='all'):
+        samples = self.gpm.getSamplesOfClassT(label)
+        labels = []
+        for sample in samples:
+            if sample['y'] in 'major':
+                labels.append([0])
+            else:
+                labels.append([1])
+        return np.array(labels)
+
+    def splitSamples(self, X, Y, nSplits=1):
+        s = StratifiedShuffleSplit(n_splits=nSplits, test_size=0.3)
+        splits = {'Xtrain':[], 'Xtest':[], 'Ytrain':[], 'Ytest':[]}
+        for trainIdx, testIdx in s.split(X, Y):
+            splits['Xtrain'].append(X[trainIdx])
+            splits['Xtest'].append(X[testIdx])
+            splits['Ytrain'].append(Y[trainIdx])
+            splits['Ytest'].append(Y[testIdx])
+        return splits
+
+
+#TRAININPUTS = Yt[0:(len(Yt) - 11)]
+#TRAINTARGETS = T[0:(len(Yt) - 11)]
+#TESTINPUTS = Yt[(len(Yt) - 11):(len(Yt) - 1)]
+#TESTTARGETS = T[(len(Yt) - 11):(len(Yt) - 1)]
+#
+#DECISIONBOUNDARY = 0.5
+#
+#gp = GaussianProcess(theta0=10e-1, random_start=100)
+#gp.fit(TRAININPUTS, TRAINTARGETS)
+## Generate a set of predictions for the test data
+#y_pred = gp.predict(TESTINPUTS)
+#print("Predicted Values:")
+#print(y_pred)
+#print("----------------")
+## Convert the continuous predictions into the classes
+## by splitting on a decision boundary of 0.5
+#predictions = []
+#for y in y_pred:
+#    if y > DECISIONBOUNDARY:
+#        predictions.append(1)
+#    else:
+#        predictions.append(0)
+#print("Binned Predictions (decision boundary = 0.5):")
+#print(predictions)
+#print("----------------")
+## print out the confusion matrix specifiy 1 as the positive class
+#cm = confusion_matrix(TESTTARGETS, predictions, [1, 0])
+#print("Confusion Matrix (1 as positive class):")
+#print(cm)
+#print("----------------")
+#print("Classification Report:")
+#print(metrics.classification_report(TESTTARGETS, predictions))
+
