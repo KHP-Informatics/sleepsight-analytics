@@ -435,6 +435,79 @@ class GPMLWrapper:
         self.log.emit("Fit Classification Report {}:\n{}".format(
             self.feature, metrics.classification_report(targets, predictions)), indents=1)
 
+    def fitHS(self):
+
+        self.gprs = []
+        self.gprAUCs = []
+        for feature in self.gpm.xFeatures:
+            self.log.emit('Fitting GP-Regression on {}...'.format(feature), indents=1)
+            Y, std = self.getYSampled(feature, label='major')
+            X = self.getX()
+            m = GPy.models.GPRegression(X=X, Y=Y)
+            try:
+                m.optimize(messages=True, max_iters=200)
+            except np.linalg.linalg.LinAlgError:
+                self.log.emit('[WANR] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.', indents=1)
+
+            muX, muY = self.getGpMean(model=m, period=len(X)-1)
+            stdTrim = [float(std[int(x)]) for x in muX]
+            varUpper = [muY[i] + stdTrim[i]*1.96 for i in range(0, len(muY))]
+            varLower = [muY[i] - stdTrim[i]*1.96 for i in range(0, len(muY))]
+
+            samples = np.transpose(self.getY(feature=self.feature, label='all'))
+            targets = np.transpose(self.getLabels(label='all'))
+
+            gprAUC = []
+            for i in range(0, len(samples)):
+                sampleTrim = [samples[i][int(x)] for x in muX]
+                aucUpper = self.computeAUC(Y1=varUpper, Y2=sampleTrim, subtraction='Y2-Y1')
+                aucLower = self.computeAUC(Y1=varLower, Y2=sampleTrim, subtraction='Y1-Y2')
+                auc = aucUpper + aucLower
+                gprAUC.append(auc)
+                print('{} {}'.format(targets[0][i],auc))
+
+            self.gprs.append(m)
+            self.gprAUCs.append(gprAUC)
+
+        print(self.gprAUCs)
+        print(np.transpose(self.gprAUCs))
+        exit()
+
+    def getGpMean(self, model, period=1438):
+        model.plot_mean()
+        ax = plt.gca()
+        line = ax.lines[0]
+        mux = np.round(line.get_xdata())
+        muxTrim = mux[(mux >= 0) & (mux <= period)]
+        muy = line.get_ydata()
+        muyTrim = muy[(mux >= 0) & (mux <= period)]
+        muxFull = np.concatenate(([0], muxTrim, [period]))
+        muyFull = np.concatenate(([muyTrim[0]], muyTrim, [muyTrim[(len(muyTrim) - 1)]]))
+        return (muxFull, muyFull)
+
+    def computeAUC(self, Y1, Y2, dx=10, subtraction='Y1-Y2'):
+        auc = []
+        for i in range(0, len(Y1)):
+            if subtraction in 'Y1-Y2' and Y1[i] > Y2[i]:
+                subArea = (Y1[i] - Y2[i]) * dx
+                auc.append(subArea)
+            if subtraction in 'Y2-Y1' and Y2[i] > Y1[i]:
+                subArea = (Y2[i] - Y1[i]) * dx
+                auc.append(subArea)
+            if subtraction not in 'Y1-Y2' and subtraction not in 'Y2-Y1':
+                self.log.emit('[WARN] Wrong argument for "computeAUC": {}'.format(subtraction), indents=1)
+        aucSum = np.sum(auc)
+        return aucSum
+
+    def plotGpHdR(self, X, muX, muY, varUpper, varLower, sample, i, target, auc):
+        plt.figure()
+        plt.plot(muX, muY)
+        plt.plot(muX, varUpper)
+        plt.plot(muX, varLower)
+        plt.plot(X, sample)
+        plt.title(auc)
+        plt.savefig(self.path + "GP_fitHS_{}_{}".format(i, target))
+
 
     def simulate(self):
         self.log.emit('Begin simulation...', indents=1)
@@ -493,6 +566,7 @@ class GPMLWrapper:
         rangeIndex = samples[0]['indexEnd'] - samples[0]['indexStart']
         yData = self.gpm.passiveData[feature]
         Y = []
+        Ystd = []
         for i in range(0, rangeIndex):
             dataPointsAtX = []
             for sample in samples:
@@ -500,7 +574,8 @@ class GPMLWrapper:
                 dataPointsAtX.append(dataPoint)
             randomSample = np.random.choice(dataPointsAtX)
             Y.append(np.array([randomSample]))
-        return np.array(Y)
+            Ystd.append(np.array([np.std(dataPointsAtX)]))
+        return (np.array(Y), Ystd)
 
     def getLabels(self, label='all'):
         samples = self.gpm.getSamplesOfClassT(label)
