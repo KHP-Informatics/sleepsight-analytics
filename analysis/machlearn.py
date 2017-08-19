@@ -458,7 +458,7 @@ class GPMLWrapper:
         for i in range(0, rangeIndex):
             dataPointsAtX = []
             for sample in samples:
-                dataPoint = yData[(sample['indexStart'] + i)]
+                dataPoint = yData[yData.index[(sample['indexStart'] + i)]]
                 dataPointsAtX.append(dataPoint)
             Y.append(np.array(dataPointsAtX))
         return np.array(Y)
@@ -471,7 +471,7 @@ class GPMLWrapper:
         for i in range(0, rangeIndex):
             dataPointsAtX = []
             for sample in samples:
-                dataPoint = yData[(sample['indexStart'] + i)]
+                dataPoint = yData[yData.index[(sample['indexStart'] + i)]]
                 dataPointsAtX.append(dataPoint)
             randomSample = np.random.choice(dataPointsAtX)
             Y.append(np.array([randomSample]))
