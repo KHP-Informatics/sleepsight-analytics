@@ -333,6 +333,7 @@ class GpModel:
 
     def __init__(self, xFeatures, yFeature, log, dayDivisionHour=0):
         self.log = log
+        self.log.emit('Setting up GPModel ...')
         self.divTime = datetime.time(hour=dayDivisionHour)
         self.xFeatures = xFeatures
         self.yFeature = yFeature
@@ -346,8 +347,12 @@ class GpModel:
 
     def createIndexTable(self):
         self.indexDict = []
+        self.log.emit('Extracting indexes...', indents=1)
         self.extractDateIdxsFromYData()
         self.extractDateIdxsFromXDataBasedOnY()
+        self.log.emit('Trimming to complete samples...', indents=1)
+        self.trimIndexDict()
+        self.log.emit('Creating class index...', indents=1)
         self.classIndexes = self.genClassIndex()
 
 
@@ -379,6 +384,11 @@ class GpModel:
             dateEnd = self.indexDict[currentTableIndex]['dateEnd']
             dateXDataStr = list(self.xData[i:(i + 1)]['timestamp'])[0]
             dateXData = datetime.datetime.strptime(dateXDataStr, '%Y-%m-%d %H:%M')
+            if dateXData > dateStart and dateXData > dateEnd:
+                while dateXData > dateEnd:
+                    currentTableIndex += 1
+                    dateStart = self.indexDict[currentTableIndex]['dateStart']
+                    dateEnd = self.indexDict[currentTableIndex]['dateEnd']
             if dateXData <= dateStart and dateXData < dateEnd:
                 idxStart = i
             if dateXData <= dateEnd:
@@ -389,6 +399,18 @@ class GpModel:
                 currentTableIndex += 1
                 if currentTableIndex >= len(self.indexDict):
                     break
+
+    def trimIndexDict(self):
+        tmpDict = []
+        for sample in self.indexDict:
+            try:
+                if sample['indexEnd'] - sample['indexStart'] == 1439:
+                    tmpDict.append(sample)
+                else:
+                    self.log.emit('[WARN] Removed sample, due to incomplete n < 1439:\n{}'.format(sample), indents=2)
+            except KeyError:
+                self.log.emit('[WARN] Removed sample, due to KeyError:\n{}'.format(sample), indents=2)
+        self.indexDict = tmpDict
 
     def genClassIndex(self):
         labels = self.yData[self.yFeature]

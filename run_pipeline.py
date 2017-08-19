@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWr
 
 
 # Overarching SleepSight pipeline script
-participantID = 1
+participantID = 6
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'

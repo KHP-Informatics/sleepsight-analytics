@@ -407,6 +407,7 @@ class GPMLWrapper:
 
     def __init__(self, gpm, plotPath, log, decisionBoundary=0.5):
         self.log = log
+        self.log.emit('Setting up GPMLWrapper ...')
         self.gpm = gpm
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
