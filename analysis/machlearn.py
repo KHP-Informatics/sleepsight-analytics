@@ -436,10 +436,7 @@ class GPMLWrapper:
             targets += list(np.transpose(splits['Ytest'][i])[0])
         self.confusionMtrxFit = confusion_matrix(targets, predictions, [1, 0])
         self.log.emit("Fit Classification Report {}:\n{}".format(
-            self.feature,
-            metrics.classification_report(targets, predictions)
-        ), indents=1)
-
+            self.feature, metrics.classification_report(targets, predictions)), indents=1)
 
 
     def simulate(self):
@@ -498,36 +495,4 @@ class GPMLWrapper:
         return splits
 
 
-#TRAININPUTS = Yt[0:(len(Yt) - 11)]
-#TRAINTARGETS = T[0:(len(Yt) - 11)]
-#TESTINPUTS = Yt[(len(Yt) - 11):(len(Yt) - 1)]
-#TESTTARGETS = T[(len(Yt) - 11):(len(Yt) - 1)]
-#
-#DECISIONBOUNDARY = 0.5
-#
-#gp = GaussianProcess(theta0=10e-1, random_start=100)
-#gp.fit(TRAININPUTS, TRAINTARGETS)
-## Generate a set of predictions for the test data
-#y_pred = gp.predict(TESTINPUTS)
-#print("Predicted Values:")
-#print(y_pred)
-#print("----------------")
-## Convert the continuous predictions into the classes
-## by splitting on a decision boundary of 0.5
-#predictions = []
-#for y in y_pred:
-#    if y > DECISIONBOUNDARY:
-#        predictions.append(1)
-#    else:
-#        predictions.append(0)
-#print("Binned Predictions (decision boundary = 0.5):")
-#print(predictions)
-#print("----------------")
-## print out the confusion matrix specifiy 1 as the positive class
-#cm = confusion_matrix(TESTTARGETS, predictions, [1, 0])
-#print("Confusion Matrix (1 as positive class):")
-#print(cm)
-#print("----------------")
-#print("Classification Report:")
-#print(metrics.classification_report(TESTTARGETS, predictions))
 
