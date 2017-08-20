@@ -419,8 +419,8 @@ class GPMLWrapper:
         self.gpm = gpm
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
-        #self.features = [self.gpm.xFeatures[i] for i in range(0, 1)]
-        self.features = self.gpm.xFeatures
+        self.features = [self.gpm.xFeatures[i] for i in range(0, 1)]
+        #self.features = self.gpm.xFeatures
 
     def prepareGP(self):
         self.log.emit('Extracting features...', indents=1)
@@ -433,6 +433,7 @@ class GPMLWrapper:
         self.gprAUCs = []
         self.varsUpper = []
         self.varsLower = []
+        self.confusionMatrices = {}
 
         for f in range(0, len(self.features)):
             self.log.emit('Fitting GP-Regression on {}...'.format(self.features[f]), indents=1)
@@ -477,6 +478,7 @@ class GPMLWrapper:
                 preProb = gpc.predict_proba([aucInput[i]])
                 predictions.append(self.formatPosterior(preProb[0][1]))
                 print('{} {}'.format(self.T[i], preProb))
+            self.confusionMatrices[self.features[f]] = confusion_matrix(self.T, predictions)
             self.log.emit("Fit Classification Report SK:\n{}".format(metrics.classification_report(self.T, predictions)),
                           indents=1)
 
@@ -558,7 +560,8 @@ class GPMLWrapper:
 
         self.simResults = {
             'outputs': self.outputs,
-            'targets': self.targets
+            'targets': self.targets,
+            'confusionMatrices': self.confusionMatrices
         }
         plt.figure()
         plt.plot(self.outputs['x'], self.outputs['yMean'])
