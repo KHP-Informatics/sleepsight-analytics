@@ -419,8 +419,7 @@ class GPMLWrapper:
         self.gpm = gpm
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
-        self.features = [self.gpm.xFeatures[i] for i in range(0, 1)]
-        #self.features = self.gpm.xFeatures
+        self.features = self.gpm.xFeatures
 
     def prepareGP(self):
         self.log.emit('Extracting features...', indents=1)
