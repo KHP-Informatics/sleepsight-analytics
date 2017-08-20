@@ -38,7 +38,7 @@ p.load()
 print(p)
 
 log = Logger(log_path, 'sleepsight'+p.id+'.log', printLog=True)
-log.emit('Begin analysis pipeline', newRun=True)
+log.emit('BEGIN ANALYSIS PIPELINE', newRun=True)
 
 # Task: 'trim data' to Study Duration
 if not p.isPipelineTaskCompleted('trim data'):
@@ -206,9 +206,14 @@ if not p.isPipelineTaskCompleted('GP model gen.'):
     gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
     gpm.createIndexTable()
     gpw = GPMLWrapper(gpm, plot_path, log=log)
-    gpw.prepareGP(feature='heart_Minutes')
+    gpw.prepareGP()
     gpw.fitHS()
-    gpw.simulate()
+    gpw.simulate(participantId=p.id)
+    p.gpSimResults = gpw.simResults
+    p.updatePipelineStatusForTask('GP model gen.', log=log)
+    p.saveSnapshot(path, log=log)
 
 else:
     log.emit('Skipping GP-MODEL GEN - already completed.')
+
+log.emit('END OF ANALYSIS.')

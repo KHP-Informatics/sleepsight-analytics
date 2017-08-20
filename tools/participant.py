@@ -167,6 +167,14 @@ class Participant:
     def nonParametricResults(self, npf):
         self.__nonParametricResults = npf
 
+    @property
+    def gpSimResults(self):
+        return self.__gpSimResults
+
+    @gpSimResults.setter
+    def gpSimResults(self, results):
+        self.__gpSimResults = results
+
     def __init__(self, id, path=''):
         self.id = self.formatID(id)
         self.path = path

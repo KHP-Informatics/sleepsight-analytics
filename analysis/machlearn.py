@@ -13,6 +13,9 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.svm import SVC
 import GPy
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn import metrics
+from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class InfoGain:
@@ -399,11 +402,16 @@ class SVMMLWrapper:
             }
             self.results[fsMethod] = newFsMethodResult
 
-from sklearn.gaussian_process import GaussianProcess
-from sklearn import metrics
-from sklearn.model_selection import StratifiedShuffleSplit
 
 class GPMLWrapper:
+
+    @property
+    def simResults(self):
+        return self.__simResults
+
+    @simResults.setter
+    def simResults(self, results):
+        self.__simResults = results
 
     def __init__(self, gpm, plotPath, log, decisionBoundary=0.5):
         self.log = log
@@ -411,67 +419,66 @@ class GPMLWrapper:
         self.gpm = gpm
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
+        #self.features = [self.gpm.xFeatures[i] for i in range(0, 1)]
+        self.features = self.gpm.xFeatures
 
-    def prepareGP(self, feature):
+    def prepareGP(self):
         self.log.emit('Extracting features...', indents=1)
-        self.feature = feature
-        self.Y = np.transpose(self.getY(self.feature, label='all'))
         self.T = self.getLabels(label='all')
-
-    def fit(self, nSplits=1):
-        predictions = []
-        splits = self.splitSamples(self.Y, self.T, nSplits=nSplits)
-        for i in range(0, nSplits):
-            kernel = GPy.kern.GridRBF(input_dim=1439)
-            self.m = GPy.models.GPClassification(X=self.Y, Y=self.T, kernel=kernel)
-            self.m.optimize(messages=True, max_iters=200)
-            for idx in range(0, len(splits['Xtest'][i])):
-                posterior = self.m.predict(Xnew=np.array([splits['Xtest'][i][idx]]))
-                predictions.append(self.formatPosterior(posterior[0][0]))
-        targets = []
-        for i in range(0, nSplits):
-            targets += list(np.transpose(splits['Ytest'][i])[0])
-        self.confusionMtrxFit = confusion_matrix(targets, predictions, [1, 0])
-        self.log.emit("Fit Classification Report {}:\n{}".format(
-            self.feature, metrics.classification_report(targets, predictions)), indents=1)
 
     def fitHS(self):
 
         self.gprs = []
+        self.gpcs = {}
         self.gprAUCs = []
-        for feature in self.gpm.xFeatures:
-            self.log.emit('Fitting GP-Regression on {}...'.format(feature), indents=1)
-            Y, std = self.getYSampled(feature, label='major')
+        self.varsUpper = []
+        self.varsLower = []
+
+        for f in range(0, len(self.features)):
+            self.log.emit('Fitting GP-Regression on {}...'.format(self.features[f]), indents=1)
+            Y, std = self.getYSampled(self.features[f], label='major')
             X = self.getX()
             m = GPy.models.GPRegression(X=X, Y=Y)
             try:
                 m.optimize(messages=True, max_iters=200)
             except np.linalg.linalg.LinAlgError:
-                self.log.emit('[WANR] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.', indents=1)
+                self.log.emit('[WARN] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.', indents=1)
 
             muX, muY = self.getGpMean(model=m, period=len(X)-1)
             stdTrim = [float(std[int(x)]) for x in muX]
+            self.varXidx = muX
             varUpper = [muY[i] + stdTrim[i]*1.96 for i in range(0, len(muY))]
             varLower = [muY[i] - stdTrim[i]*1.96 for i in range(0, len(muY))]
+            self.varsUpper.append(varUpper)
+            self.varsLower.append(varLower)
 
-            samples = np.transpose(self.getY(feature=self.feature, label='all'))
-            targets = np.transpose(self.getLabels(label='all'))
 
+            samples = np.transpose(self.getY(feature=self.features[f], label='all'))
             gprAUC = []
             for i in range(0, len(samples)):
-                sampleTrim = [samples[i][int(x)] for x in muX]
+                sampleTrim = [samples[i][int(x)] for x in self.varXidx]
                 aucUpper = self.computeAUC(Y1=varUpper, Y2=sampleTrim, subtraction='Y2-Y1')
                 aucLower = self.computeAUC(Y1=varLower, Y2=sampleTrim, subtraction='Y1-Y2')
                 auc = aucUpper + aucLower
                 gprAUC.append(auc)
-                print('{} {}'.format(targets[0][i],auc))
 
             self.gprs.append(m)
             self.gprAUCs.append(gprAUC)
 
-        print(self.gprAUCs)
-        print(np.transpose(self.gprAUCs))
-        exit()
+            self.log.emit('Fitting GP-Classification...', indents=1)
+
+            aucInput = np.array([[auc] for auc in self.gprAUCs[f]])
+            gpc = GaussianProcessClassifier()
+            gpc.fit(X=aucInput, y=self.T)
+            self.gpcs[f] = gpc
+
+            predictions = []
+            for i in range(0, len(aucInput)):
+                preProb = gpc.predict_proba([aucInput[i]])
+                predictions.append(self.formatPosterior(preProb[0][1]))
+                print('{} {}'.format(self.T[i], preProb))
+            self.log.emit("Fit Classification Report SK:\n{}".format(metrics.classification_report(self.T, predictions)),
+                          indents=1)
 
     def getGpMean(self, model, period=1438):
         model.plot_mean()
@@ -499,42 +506,65 @@ class GPMLWrapper:
         aucSum = np.sum(auc)
         return aucSum
 
-    def plotGpHdR(self, X, muX, muY, varUpper, varLower, sample, i, target, auc):
-        plt.figure()
-        plt.plot(muX, muY)
-        plt.plot(muX, varUpper)
-        plt.plot(muX, varLower)
-        plt.plot(X, sample)
-        plt.title(auc)
-        plt.savefig(self.path + "GP_fitHS_{}_{}".format(i, target))
-
-
-    def simulate(self):
+    def simulate(self, participantId):
         self.log.emit('Begin simulation...', indents=1)
+
         T = self.getLabels(label='all')
-        Tts = list([T[i] for i in range(1, len(T))])
-        Y = np.transpose(self.getY(self.feature, label='all'))
-        ts = [Y[i] for i in range(1, len(Y))]
-        inputVector = Y[0]
+        self.outputs = {'x': [], 'y': [], 'p': []}
+        self.targets = {'x': [], 'y': []}
 
-        output = {'x':[], 'y':[]}
-        target = {'x':[], 'y':[]}
-        xIdx = 0
-        target['x'].append(0)
-        target['y'].append(T[0][0])
-        for i in range(0, len(ts)):
-            for j in range(0, len(ts[i])):
-                inputVector[j] = ts[i][j]
-                posterior = self.m.predict(Xnew=np.array([inputVector]))
-                output['x'].append(xIdx)
-                output['y'].append(self.formatPosterior(posterior[0][0]))
-                xIdx += 1
-            target['x'].append(xIdx)
-            target['y'].append(Tts[i][0])
+        for f in range(0, len(self.features)):
+            Y = np.transpose(self.getY(self.features[f], label='all'))
+            inputVectors = Y[0]
 
-        plt.plot(output['x'], output['y'])
-        plt.plot(target['x'], target['y'], 'ro')
-        plt.savefig(self.path + 'GP_sim')
+            output = {'x': [], 'y': [], 'p':[]}
+            target = {'x': [], 'y': []}
+            xIdx = 0
+            target['x'].append(0)
+            target['y'].append(T[0][0])
+            for i in range(0, len(Y)):
+                for j in range(0, len(Y[i])):
+                    aucVector = []
+                    inputVectors[j] = Y[i][j]
+                    sampleTrim = [inputVectors[int(x)] for x in self.varXidx]
+                    # GP-regression outputs
+                    aucUpper = self.computeAUC(Y1=self.varsUpper[f], Y2=sampleTrim, subtraction='Y2-Y1')
+                    aucLower = self.computeAUC(Y1=self.varsLower[f], Y2=sampleTrim, subtraction='Y1-Y2')
+                    auc = aucUpper + aucLower
+                    aucVector.append(auc)
+                    # GP-classification output
+                    posterior = self.gpcs[f].predict_proba(np.array([aucVector]))
+                    output['x'].append(xIdx)
+                    output['p'].append(posterior[0][1])
+                    output['y'].append(self.formatPosterior(posterior[0][1]))
+                    xIdx += 1
+                target['x'].append(xIdx)
+                target['y'].append(self.T[i][0])
+            plt.figure()
+            plt.plot(output['x'], output['y'])
+            plt.plot(output['x'], output['p'])
+            plt.plot(self.targets['x'], self.targets['y'], 'ro')
+            plt.savefig(self.path + '{}_GP_sim_{}'.format(participantId, self.features[f]))
+
+            self.outputs['x'].append(output['x'])
+            self.outputs['y'].append(output['y'])
+            self.outputs['p'].append(output['p'])
+            self.targets['x'] = target['x']
+            self.targets['y'] = target['y']
+
+        self.outputs['x'] = self.outputs['x'][0]
+        self.outputs['yMean'] = np.mean(self.outputs['y'], axis=0)
+        self.outputs['pMean'] = np.mean(self.outputs['p'], axis=0)
+
+        self.simResults = {
+            'outputs': self.outputs,
+            'targets': self.targets
+        }
+        plt.figure()
+        plt.plot(self.outputs['x'], self.outputs['yMean'])
+        plt.plot(self.outputs['x'], self.outputs['pMean'])
+        plt.plot(self.targets['x'], self.targets['y'], 'ro')
+        plt.savefig(self.path + '{}_GP_sim'.format(participantId))
 
     def formatPosterior(self, val):
         if val == self.decisionBoundary:
