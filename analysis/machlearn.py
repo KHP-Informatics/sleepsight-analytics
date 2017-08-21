@@ -515,6 +515,7 @@ class GPMLWrapper:
         self.targets = {'x': [], 'y': []}
 
         for f in range(0, len(self.features)):
+            self.log.emit('Simulating {}...'.format(self.features[f]), indents=1)
             Y = np.transpose(self.getY(self.features[f], label='all'))
             inputVectors = Y[0]
 
