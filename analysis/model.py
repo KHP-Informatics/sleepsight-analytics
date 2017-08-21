@@ -360,11 +360,15 @@ class GpModel:
         for i in range(len(self.yData)):
             entry = {'index': i}
             yDataSelect = self.yData[self.yFeature]
-            entry['y'] = yDataSelect.loc[i]
+            entry['y'] = yDataSelect.loc[yDataSelect.index[i]]
             startDate, endDate = self.determineDatesFromYData(i)
             entry['dateStart'] = startDate
             entry['dateEnd'] = endDate
-            self.indexDict.append(entry)
+            try:
+                if entry['y'] not in 'nan':
+                    self.indexDict.append(entry)
+            except TypeError:
+                self.log.emit('[WARN] Removed sample, due to label TypeError:\n{}'.format(entry), indents=1)
 
     def determineDatesFromYData(self, index):
         dt_str = list(self.activeData[index:(index+1)]['datetime'])[0]
@@ -380,6 +384,9 @@ class GpModel:
         idxEnd = 0
         currentTableIndex = 0
         for i in range(len(self.xData)):
+            if currentTableIndex >= len(self.indexDict):
+                print(currentTableIndex)
+                break
             dateStart = self.indexDict[currentTableIndex]['dateStart']
             dateEnd = self.indexDict[currentTableIndex]['dateEnd']
             dateXDataStr = list(self.xData[i:(i + 1)]['timestamp'])[0]
@@ -387,6 +394,9 @@ class GpModel:
             if dateXData > dateStart and dateXData > dateEnd:
                 while dateXData > dateEnd:
                     currentTableIndex += 1
+                    if currentTableIndex >= len(self.indexDict):
+                        print(currentTableIndex)
+                        break
                     dateStart = self.indexDict[currentTableIndex]['dateStart']
                     dateEnd = self.indexDict[currentTableIndex]['dateEnd']
             if dateXData <= dateStart and dateXData < dateEnd:
@@ -414,6 +424,7 @@ class GpModel:
 
     def genClassIndex(self):
         labels = self.yData[self.yFeature]
+        labels = [labels[labels.index[i]] for i in range(0, len(self.indexDict))]
         uniqueLabels = np.unique(labels)
         classIndexes = {}
         for label in uniqueLabels:

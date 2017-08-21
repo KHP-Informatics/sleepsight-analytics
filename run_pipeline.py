@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWr
 
 
 # Overarching SleepSight pipeline script
-participantID = 5
+participantID = 11
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -33,7 +33,7 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-#p.pipelineStatus['np-model gen'] = False
+#p.pipelineStatus['GP model gen.'] = False
 #p.saveSnapshot(p.path)
 print(p)
 
