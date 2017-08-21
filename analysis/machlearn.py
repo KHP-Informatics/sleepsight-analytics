@@ -541,11 +541,11 @@ class GPMLWrapper:
                     xIdx += 1
                 target['x'].append(xIdx)
                 target['y'].append(self.T[i][0])
-            plt.figure()
-            plt.plot(output['x'], output['y'])
-            plt.plot(output['x'], output['p'])
-            plt.plot(self.targets['x'], self.targets['y'], 'ro')
-            plt.savefig(self.path + '{}_GP_sim_{}'.format(participantId, self.features[f]))
+            #plt.figure()
+            #plt.plot(output['x'], output['y'])
+            #plt.plot(output['x'], output['p'])
+            #plt.plot(self.targets['x'], self.targets['y'], 'ro')
+            #plt.savefig(self.path + '{}_GP_sim_{}'.format(participantId, self.features[f]))
 
             self.outputs['x'].append(output['x'])
             self.outputs['y'].append(output['y'])
