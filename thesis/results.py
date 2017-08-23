@@ -527,6 +527,85 @@ class NonParametricSVMEval:
             f.write(latexTable)
             f.close()
 
+class GaussianProcessEval:
+
+    def __init__(self, aggr, log):
+        self.log = log
+        self.aggr = aggr
+
+    def logClassificationReports(self):
+        self.classReport = pd.DataFrame()
+        for p in self.aggr.aggregates:
+            try:
+                cm = p.gpSimResults['confusionMatrices']
+                df = self.createParticipantGPummary(p.id, p.passiveSensors, cm)
+                self.classReport = pd.concat([self.classReport, df], axis=0)
+            except AttributeError:
+                self.log.emit('[WARN] Participant {} does not have "gpSimResults" attribute.'.format(p.id), indents=1)
+
+    def createParticipantGPummary(self, id, sensors, confusionMatrix):
+        index = ['Precision', 'Recall', 'F1 Score']
+        precision, recall, f1Score = [], [], []
+        i = 0
+        for sensor in sensors:
+            precision.append(self.computePrecision(confusionMatrix[sensor]))
+            recall.append(self.computeRecall(confusionMatrix[sensor]))
+            f1Score.append(self.computeF1Score(precision[i], recall[i]))
+            i += 1
+        df = pd.DataFrame([precision, recall, f1Score], index=index, columns=sensors)
+        multiIndex = [(id, rowName) for rowName in index]
+        df.index = pd.MultiIndex.from_tuples(multiIndex)
+        return df
+
+    def computePrecision(self, confusionMatrix):
+        tpC0 = confusionMatrix[0][0]
+        fpC0 = confusionMatrix[1][0]
+        p0 = tpC0 / (tpC0 + fpC0)
+        tpC1 = confusionMatrix[1][1]
+        fpC1 = confusionMatrix[0][1]
+        p1 = tpC1 / (tpC1 + fpC1)
+        p = np.mean([p0, p1])
+        p = self.rescueScore(p)
+        return p
+
+    def computeRecall(self, confusionMatrix):
+        tpC0 = confusionMatrix[0][0]
+        tnC0 = confusionMatrix[0][1]
+        r0 = tpC0 / (tpC0 + tnC0)
+        tpC1 = confusionMatrix[1][1]
+        tnC1 = confusionMatrix[1][0]
+        r1 = tpC1 / (tpC1 + tnC1)
+        r = np.mean([r0, r1])
+        r = self.rescueScore(r)
+        return r
+
+    def computeF1Score(self, precision, recall):
+        f = 2 * precision * recall / (precision + recall)
+        return f
+
+    def rescueScore(self, score):
+        if score < 0.5:
+            return 1 - score
+        return score
+
+    def exportLatexTable(self, show=False, save=True, mean=False):
+        self.log.emit('Exporting table...', indents=1)
+        if mean:
+            classReportM = self.classReport.mean(axis=1)
+            self.classReport = pd.DataFrame(classReportM)
+        outputTable = self.classReport.round(2)
+        latexTable = outputTable.to_latex(index=True, na_rep='-')
+        ifMean = ''
+        if mean:
+            ifMean = '-mean'
+        fileName = 'DataNonParametric-GP-Summary{}.tex'.format(ifMean)
+        if show:
+            print(latexTable)
+        if save:
+            path = self.aggr.pathPlot + fileName
+            f = open(path, 'w')
+            f.write(latexTable)
+            f.close()
 
 ######## SUPPORT FUNCTIONS
 def compute_SVM_on_all_participants(aggr, totalF, log):
@@ -557,5 +636,4 @@ def compute_SVM_on_all_participants(aggr, totalF, log):
     npwMIFS.runSVM(nFeatures=10)
     results['MIFS'] = npwMIFS.results['MIFS']
     return results
-
 

@@ -149,4 +149,6 @@ if options['non-parametric-svm']:
 
 # GP results
 if options['non-parametric-gp']:
-    pass
+    gpEval = T.GaussianProcessEval(aggr, log)
+    gpEval.logClassificationReports()
+    gpEval.exportLatexTable(mean=True)

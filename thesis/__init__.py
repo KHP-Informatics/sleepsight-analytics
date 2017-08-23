@@ -7,6 +7,7 @@ from thesis.results import Compliance, \
     FeatureSelectionEval, \
     NonParametricSVMEval, \
     DelayEval, \
+    GaussianProcessEval, \
     compute_SVM_on_all_participants
 __all__ = ['aggregates',
            'compliance',
@@ -17,5 +18,6 @@ __all__ = ['aggregates',
            'featureselectioneval',
            'nonparametricsvmeval',
            'delayeval',
+           'gaussianprocesseval',
            'compute_SVM_on_all_participants'
            ]
