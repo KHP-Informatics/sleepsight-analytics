@@ -151,4 +151,6 @@ if options['non-parametric-svm']:
 if options['non-parametric-gp']:
     gpEval = T.GaussianProcessEval(aggr, log)
     gpEval.logClassificationReports()
+    gpEval.exportLatexTable(mean=False)
     gpEval.exportLatexTable(mean=True)
+    gpEval.plotSummaryGP(plot_path)

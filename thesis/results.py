@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from analysis import InfoGain
 import matplotlib.pyplot as plt
+import matplotlib
 from collections import Counter
 from analysis import SVMMLWrapper
 
@@ -588,11 +589,38 @@ class GaussianProcessEval:
             return 1 - score
         return score
 
+    def plotSummaryGP(self, plotPath):
+        f, axes = plt.subplots(figsize=(15, 20), nrows=13, ncols=1)
+        i = 0
+        for p in self.aggr.aggregates:
+            try:
+                r = p.gpSimResults
+                outputs = r['outputs']
+                targets = r['targets']
+                axes[i].plot(outputs['x'], outputs['yMean'])
+                axes[i].plot(outputs['x'], outputs['pMean'])
+                axes[i].plot(targets['x'], targets['y'], 'ro')
+                axes[i].set_xticklabels(axes[i].get_xticklabels(), visible=False)
+                axes[i].set_ylabel('Participant {}\nP(t*=1 | f(x))'.format(p.id), fontsize=14)
+                axes[i].tick_params(axis='x', labelsize=14)
+                axes[i].tick_params(axis='y', labelsize=14)
+                if i is 12:
+                    labels = [i+1 for i in range(0, len(targets['x']))]
+                    axes[i].set_xticks(targets['x'])
+                    axes[i].set_xticklabels(labels, visible=True)
+                i += 1
+            except AttributeError:
+                self.log.emit('[WARN] Participant {} does not have "gpSimResults" attribute.'.format(p.id), indents=1)
+
+        plt.xlabel('Days', fontsize=16)
+        plt.tight_layout()
+        plt.savefig(plotPath + 'GP_sim', )
+
     def exportLatexTable(self, show=False, save=True, mean=False):
         self.log.emit('Exporting table...', indents=1)
         if mean:
             classReportM = self.classReport.mean(axis=1)
-            self.classReport = pd.DataFrame(classReportM)
+            self.classReport = pd.DataFrame(classReportM.unstack().reset_index())
         outputTable = self.classReport.round(2)
         latexTable = outputTable.to_latex(index=True, na_rep='-')
         ifMean = ''
