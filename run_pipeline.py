@@ -33,7 +33,7 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-p.pipelineStatus['GP model gen.'] = False
+#p.pipelineStatus['GP model gen.'] = False
 #p.saveSnapshot(p.path)
 print(p)
 
