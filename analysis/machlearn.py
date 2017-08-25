@@ -441,7 +441,6 @@ class GPMLWrapper:
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
         self.features = self.gpm.xFeatures
-        self.features = [self.gpm.xFeatures[0]]
         self.T = self.getLabels(label='all')
 
     def fitHSGP(self, kFold=9):
