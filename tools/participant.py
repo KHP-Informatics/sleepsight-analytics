@@ -168,6 +168,14 @@ class Participant:
         self.__nonParametricResults = npf
 
     @property
+    def gpResults(self):
+        return self.__gpResults
+
+    @gpResults.setter
+    def gpResults(self, results):
+        self.__gpResults = results
+
+    @property
     def gpSimResults(self):
         return self.__gpSimResults
 

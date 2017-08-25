@@ -406,6 +406,27 @@ class SVMMLWrapper:
 class GPMLWrapper:
 
     @property
+    def gpResults(self):
+        results = {
+            'gpcs': self.gpcs,
+            'gprAUCs': self.gprAUCs,
+            'varXidxs': self.varXidxs,
+            'varsUpper': self.varsUpper,
+            'varsLower': self.varsLower,
+            'confusionMatrices': self.confusionMatrices
+        }
+        return results
+
+    @gpResults.setter
+    def gpResults(self, results):
+        self.gpcs = results['gpcs']
+        self.gprAUCs = results['gprAUCs']
+        self.varXidxs = results['varXidxs']
+        self.varsUpper = results['varsUpper']
+        self.varsLower = results['varsLower']
+        self.confusionMatrices = results['confusionMatrices']
+
+    @property
     def simResults(self):
         return self.__simResults
 
@@ -420,66 +441,119 @@ class GPMLWrapper:
         self.path = plotPath
         self.decisionBoundary = decisionBoundary
         self.features = self.gpm.xFeatures
-
-    def prepareGP(self):
-        self.log.emit('Extracting features...', indents=1)
+        self.features = [self.gpm.xFeatures[0]]
         self.T = self.getLabels(label='all')
 
-    def fitHS(self):
+    def fitHSGP(self, kFold=9):
 
-        self.gprs = []
-        self.gpcs = {}
+        self.gpcs = []
+        self.varXidxs = []
         self.gprAUCs = []
         self.varsUpper = []
         self.varsLower = []
-        self.confusionMatrices = {}
+        self.confusionMatrices = []
 
-        for f in range(0, len(self.features)):
-            self.log.emit('Fitting GP-Regression on {}...'.format(self.features[f]), indents=1)
-            Y, std = self.getYSampled(self.features[f], label='major')
-            X = self.getX()
-            m = GPy.models.GPRegression(X=X, Y=Y)
-            try:
-                m.optimize(messages=True, max_iters=200)
-            except np.linalg.linalg.LinAlgError:
-                self.log.emit('[WARN] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.', indents=1)
+        kFolds = self.genFolds(kFold)
 
-            muX, muY = self.getGpMean(model=m, period=len(X)-1)
-            stdTrim = [float(std[int(x)]) for x in muX]
-            self.varXidx = muX
-            varUpper = [muY[i] + stdTrim[i]*1.96 for i in range(0, len(muY))]
-            varLower = [muY[i] - stdTrim[i]*1.96 for i in range(0, len(muY))]
-            self.varsUpper.append(varUpper)
-            self.varsLower.append(varLower)
+        for k in range(0, len(kFolds)):
+            self.log.emit('Fold {}: {}'.format(k, kFolds[k]))
+            gpcsTmp = {}
+            gprAUCsTmp = []
+            varsUpperTmp = []
+            varsLowerTmp = []
+            cmTmp = {}
 
+            for f in range(0, len(self.features)):
+                self.log.emit('Fitting GP-Regression on {}...'.format(self.features[f]), indents=1)
+                T = self.genTrainSet(kFolds[k], self.T)
+                Y, std = self.getYSampled(self.features[f], label='major')
+                Y, std = self.genTrainSet(kFolds[k], Y), self.genTrainSet(kFolds[k], std)
+                X = self.getX()
+                X = self.genTrainSet(kFolds[k], X)
 
-            samples = np.transpose(self.getY(feature=self.features[f], label='all'))
-            gprAUC = []
-            for i in range(0, len(samples)):
-                sampleTrim = [samples[i][int(x)] for x in self.varXidx]
-                aucUpper = self.computeAUC(Y1=varUpper, Y2=sampleTrim, subtraction='Y2-Y1')
-                aucLower = self.computeAUC(Y1=varLower, Y2=sampleTrim, subtraction='Y1-Y2')
-                auc = aucUpper + aucLower
-                gprAUC.append(auc)
+                m = GPy.models.GPRegression(X=X, Y=Y)
+                try:
+                    m.optimize(messages=True, max_iters=200)
+                except np.linalg.linalg.LinAlgError:
+                    self.log.emit('[WARN] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.', indents=1)
+                muX, muY = self.getGpMean(model=m, period=len(X)-1)
 
-            self.gprs.append(m)
-            self.gprAUCs.append(gprAUC)
+                s = GPy.models.GPRegression(X=Y, Y=std)
+                try:
+                    s.optimize(messages=True, max_iters=200)
+                except np.linalg.linalg.LinAlgError:
+                    self.log.emit(
+                        '[WARN] LinAlgError: not positive definite, even with jitter. Continuing with non-optmised mean function.',
+                        indents=1)
 
-            self.log.emit('Fitting GP-Classification...', indents=1)
+                stdTrim = []
+                for x in muX:
+                    mPredicted = m.predict(np.array([[x]]))
+                    sPredicted = s.predict(mPredicted[0])
+                    stdTrim.append(sPredicted[0][0][0])
 
-            aucInput = np.array([[auc] for auc in self.gprAUCs[f]])
-            gpc = GaussianProcessClassifier()
-            gpc.fit(X=aucInput, y=self.T)
-            self.gpcs[f] = gpc
+                varUpper = [muY[i] + stdTrim[i]*1.96 for i in range(0, len(muY))]
+                varLower = [muY[i] - stdTrim[i]*1.96 for i in range(0, len(muY))]
+                varsUpperTmp.append(varUpper)
+                varsLowerTmp.append(varLower)
 
-            predictions = []
-            for i in range(0, len(aucInput)):
-                preProb = gpc.predict_proba([aucInput[i]])
-                predictions.append(self.formatPosterior(preProb[0][1]))
-                print('{} {}'.format(self.T[i], preProb))
-            self.confusionMatrices[self.features[f]] = confusion_matrix(self.T, predictions)
-            self.log.emit("Fit Classification Report SK:\n{}".format(metrics.classification_report(self.T, predictions)),
-                          indents=1)
+                samples = np.transpose(self.getY(feature=self.features[f], label='all'))
+                samplesTrain = self.genTrainSet(kFolds[k], samples)
+                gprAUC = self.computeAUCs(samples=samplesTrain, varX=muX, varUpper=varUpper, varLower=varLower)
+                gprAUCsTmp.append(gprAUC)
+                self.log.emit('Fitting GP-Classification...', indents=1)
+
+                aucInput = np.array([[auc] for auc in gprAUC])
+                gpc = GaussianProcessClassifier()
+                gpc.fit(X=aucInput, y=T)
+                gpcsTmp[f] = gpc
+
+                Ttest = self.genTestSet(kFolds[k], self.T)
+                samplesTest = self.genTestSet(kFolds[k], samples)
+                gprAUCsTest = self.computeAUCs(samplesTest, muX, varUpper, varLower)
+                aucInputTest = np.array([[auc] for auc in gprAUCsTest])
+                predictions = []
+                for i in range(0, len(aucInputTest)):
+                    preProb = gpc.predict_proba([aucInputTest[i]])
+                    predictions.append(self.formatPosterior(preProb[0][1]))
+                    print('{} {}'.format(Ttest[i], preProb))
+                cmTmp[self.features[f]] = confusion_matrix(Ttest, predictions)
+                self.log.emit("Fit Classification Report SK:\n{}".format(metrics.classification_report(Ttest, predictions)),
+                              indents=1)
+            self.gpcs.append(gpcsTmp)
+            self.gprAUCs.append(gprAUCsTmp)
+            self.varXidxs.append(muX)
+            self.varsUpper.append(varsUpperTmp)
+            self.varsLower.append(varsLowerTmp)
+            self.confusionMatrices.append(cmTmp)
+
+    def genFolds(self, kFolds, enableAll=True):
+        sampleSize = len(self.T)
+        fold = int(sampleSize/kFolds)
+        folds = []
+        if enableAll:
+            f = {'start': -2, 'end': -1}
+            folds.append(f)
+        for i in range(0, kFolds):
+            f = {'start': i*fold, 'end': (i+1)*fold-1}
+            folds.append(f)
+        return folds
+
+    def genTrainSet(self, fold, samples):
+        samplesTrain = []
+        for i in range(0, len(samples)):
+            if i < fold['start'] or i > fold['end']:
+                samplesTrain.append(samples[i])
+        return np.array(samplesTrain)
+
+    def genTestSet(self, fold, samples):
+        samplesTest = []
+        for i in range(0, len(samples)):
+            if i >= fold['start'] or i <= fold['end']:
+                samplesTest.append(samples[i])
+            if fold['start'] == -2:
+                samplesTest.append(samples[i])
+        return np.array(samplesTest)
 
     def getGpMean(self, model, period=1438):
         model.plot_mean()
@@ -492,6 +566,16 @@ class GPMLWrapper:
         muxFull = np.concatenate(([0], muxTrim, [period]))
         muyFull = np.concatenate(([muyTrim[0]], muyTrim, [muyTrim[(len(muyTrim) - 1)]]))
         return (muxFull, muyFull)
+
+    def computeAUCs(self, samples, varX, varUpper, varLower):
+        gprAUC = []
+        for i in range(0, len(samples)):
+            sampleTrim = [samples[i][int(x)] for x in varX]
+            aucUpper = self.computeAUC(Y1=varUpper, Y2=sampleTrim, subtraction='Y2-Y1')
+            aucLower = self.computeAUC(Y1=varLower, Y2=sampleTrim, subtraction='Y1-Y2')
+            auc = aucUpper + aucLower
+            gprAUC.append(auc)
+        return gprAUC
 
     def computeAUC(self, Y1, Y2, dx=10, subtraction='Y1-Y2'):
         auc = []
@@ -542,11 +626,6 @@ class GPMLWrapper:
                     xIdx += 1
                 target['x'].append(xIdx)
                 target['y'].append(self.T[i][0])
-            #plt.figure()
-            #plt.plot(output['x'], output['y'])
-            #plt.plot(output['x'], output['p'])
-            #plt.plot(self.targets['x'], self.targets['y'], 'ro')
-            #plt.savefig(self.path + '{}_GP_sim_{}'.format(participantId, self.features[f]))
 
             self.outputs['x'].append(output['x'])
             self.outputs['y'].append(output['y'])
@@ -608,7 +687,7 @@ class GPMLWrapper:
             randomSample = np.random.choice(dataPointsAtX)
             Y.append(np.array([randomSample]))
             Ystd.append(np.array([np.std(dataPointsAtX)]))
-        return (np.array(Y), Ystd)
+        return (np.array(Y), np.array(Ystd))
 
     def getLabels(self, label='all'):
         samples = self.gpm.getSamplesOfClassT(label)
