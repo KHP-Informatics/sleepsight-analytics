@@ -201,6 +201,7 @@ class Participant:
             'dimensionality reduction': False,
             'np-model gen': False,
             'GP model gen.': False,
+            'GP model sim.': False,
             'anomaly detect.': False,
             'association': False
         }
@@ -560,7 +561,7 @@ class Participant:
             '>> Dimensionality reduction [{}]\n    |\n' \
             '>> Non-parametric model gen [{}]\n    |\n' \
             '>> GP model gen.[{}]\n    |\n' \
-            '>> Anomaly detect.[{}]'\
+            '>> GP model sim.[{}]'\
             .format(self.id,
                 self.pipelineStatus['passive data'],
                 self.pipelineStatus['active data'],
@@ -576,7 +577,7 @@ class Participant:
                 self.pipelineStatus['dimensionality reduction'],
                 self.pipelineStatus['np-model gen'],
                 self.pipelineStatus['GP model gen.'],
-                self.pipelineStatus['anomaly detect.'],
+                self.pipelineStatus['GP model sim.'],
                 self.pipelineStatus['association']
             )
         rendered = classInfo + participantInfo + pipelineInfo

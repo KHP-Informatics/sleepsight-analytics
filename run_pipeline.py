@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWr
 
 
 # Overarching SleepSight pipeline script
-participantID = 9
+participantID = 1
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -33,7 +33,7 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-#p.pipelineStatus['GP model gen.'] = False
+#p.pipelineStatus['GP model sim.'] = False
 #p.saveSnapshot(p.path)
 print(p)
 
@@ -210,6 +210,21 @@ if not p.isPipelineTaskCompleted('GP model gen.'):
     p.gpResults = gpw.gpResults
     p.updatePipelineStatusForTask('GP model gen.', log=log)
     p.saveSnapshot(path, log=log)
+
+else:
+    log.emit('Skipping GP-MODEL GEN - already completed.')
+
+# Task 'gp-model sim' (Simulating GP model)
+if not p.isPipelineTaskCompleted('GP model sim.'):
+    log.emit('Continuing with GP-MODEL SIM...')
+    gpm = GpModel(xFeatures=p.passiveSensors, yFeature='label', dayDivisionHour=12, log=log)
+    gpm.submitData(active=p.activeDataSymptom, passive=p.passiveData)
+    gpm.createIndexTable()
+    gpw = GPMLWrapper(gpm, plot_path, log=log)
+    gpw.gpResults = p.gpResults
+
+    #p.updatePipelineStatusForTask('GP model sim.', log=log)
+    #p.saveSnapshot(path, log=log)
 
 else:
     log.emit('Skipping GP-MODEL GEN - already completed.')
