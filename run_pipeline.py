@@ -13,7 +13,7 @@ from analysis.machlearn import Rebalance, FeatureSelection, SVMMLWrapper, GPMLWr
 
 
 # Overarching SleepSight pipeline script
-participantID = 1
+participantID = 5
 path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/data/'
 plot_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/plots/'
 log_path = '/Users/Kerz/Documents/projects/SleepSight/ANALYSIS/logs/'
@@ -33,7 +33,7 @@ p.metaDataFileName = 'meta_patients.json'
 p.sleepSummaryFileName = 'FB_sleep_summary.csv'
 p.load()
 
-#p.pipelineStatus['GP model sim.'] = False
+p.pipelineStatus['GP model sim.'] = False
 #p.saveSnapshot(p.path)
 print(p)
 
@@ -222,10 +222,10 @@ if not p.isPipelineTaskCompleted('GP model sim.'):
     gpm.createIndexTable()
     gpw = GPMLWrapper(gpm, plot_path, log=log)
     gpw.gpResults = p.gpResults
-
-    #p.updatePipelineStatusForTask('GP model sim.', log=log)
-    #p.saveSnapshot(path, log=log)
-
+    gpw.simulate(p.id)
+    p.gpSimResults = gpw.simResults
+    p.updatePipelineStatusForTask('GP model sim.', log=log)
+    p.saveSnapshot(path, log=log)
 else:
     log.emit('Skipping GP-MODEL GEN - already completed.')
 

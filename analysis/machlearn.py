@@ -419,6 +419,7 @@ class GPMLWrapper:
 
     @gpResults.setter
     def gpResults(self, results):
+        self.log.emit('Setting models from external source...', indents=1)
         self.gpcs = results['gpcs']
         self.gprAUCs = results['gprAUCs']
         self.varXidxs = results['varXidxs']
@@ -593,59 +594,67 @@ class GPMLWrapper:
     def simulate(self, participantId):
         self.log.emit('Begin simulation...', indents=1)
 
-        T = self.getLabels(label='all')
-        self.outputs = {'x': [], 'y': [], 'p': []}
-        self.targets = {'x': [], 'y': []}
-
-        for f in range(0, len(self.features)):
-            self.log.emit('Simulating {}...'.format(self.features[f]), indents=1)
-            Y = np.transpose(self.getY(self.features[f], label='all'))
-            inputVectors = Y[0]
-
-            output = {'x': [], 'y': [], 'p':[]}
-            target = {'x': [], 'y': []}
-            xIdx = 0
-            target['x'].append(0)
-            target['y'].append(T[0][0])
-            for i in range(0, len(Y)):
-                for j in range(0, len(Y[i])):
-                    aucVector = []
-                    inputVectors[j] = Y[i][j]
-                    sampleTrim = [inputVectors[int(x)] for x in self.varXidx]
-                    # GP-regression outputs
-                    aucUpper = self.computeAUC(Y1=self.varsUpper[f], Y2=sampleTrim, subtraction='Y2-Y1')
-                    aucLower = self.computeAUC(Y1=self.varsLower[f], Y2=sampleTrim, subtraction='Y1-Y2')
-                    auc = aucUpper + aucLower
-                    aucVector.append(auc)
-                    # GP-classification output
-                    posterior = self.gpcs[f].predict_proba(np.array([aucVector]))
-                    output['x'].append(xIdx)
-                    output['p'].append(posterior[0][1])
-                    output['y'].append(self.formatPosterior(posterior[0][1]))
-                    xIdx += 1
-                target['x'].append(xIdx)
-                target['y'].append(self.T[i][0])
-
-            self.outputs['x'].append(output['x'])
-            self.outputs['y'].append(output['y'])
-            self.outputs['p'].append(output['p'])
-            self.targets['x'] = target['x']
-            self.targets['y'] = target['y']
-
-        self.outputs['x'] = self.outputs['x'][0]
-        self.outputs['yMean'] = np.mean(self.outputs['y'], axis=0)
-        self.outputs['pMean'] = np.mean(self.outputs['p'], axis=0)
-
         self.simResults = {
-            'outputs': self.outputs,
-            'targets': self.targets,
+            'outputs': [],
+            'targets': [],
             'confusionMatrices': self.confusionMatrices
         }
-        plt.figure()
-        plt.plot(self.outputs['x'], self.outputs['yMean'])
-        plt.plot(self.outputs['x'], self.outputs['pMean'])
-        plt.plot(self.targets['x'], self.targets['y'], 'ro')
-        plt.savefig(self.path + '{}_GP_sim'.format(participantId))
+
+        for k in range(0, len(self.gpcs)):
+            self.log.emit('Simulating fold {}:'.format(k), indents=1)
+
+            T = self.getLabels(label='all')
+            outputs = {'x': [], 'y': [], 'p': []}
+            targets = {'x': [], 'y': []}
+
+            for f in range(0, len(self.features)):
+                self.log.emit('Simulating {}...'.format(self.features[f]), indents=2)
+                Y = np.transpose(self.getY(self.features[f], label='all'))
+                inputVectors = Y[0]
+
+                output = {'x': [], 'y': [], 'p':[]}
+                target = {'x': [], 'y': []}
+                xIdx = 0
+                target['x'].append(0)
+                target['y'].append(T[0][0])
+                for i in range(0, len(Y)):
+                    for j in range(0, len(Y[i])):
+                        aucVector = []
+                        inputVectors[j] = Y[i][j]
+                        sampleTrim = [inputVectors[int(x)] for x in self.varXidxs[k]]
+                        # GP-regression outputs
+                        aucUpper = self.computeAUC(Y1=self.varsUpper[k][f], Y2=sampleTrim, subtraction='Y2-Y1')
+                        aucLower = self.computeAUC(Y1=self.varsLower[k][f], Y2=sampleTrim, subtraction='Y1-Y2')
+                        auc = aucUpper + aucLower
+                        aucVector.append(auc)
+                        # GP-classification output
+                        posterior = self.gpcs[k][f].predict_proba(np.array([aucVector]))
+                        output['x'].append(xIdx)
+                        output['p'].append(posterior[0][1])
+                        output['y'].append(self.formatPosterior(posterior[0][1]))
+                        xIdx += 1
+                    target['x'].append(xIdx)
+                    target['y'].append(self.T[i][0])
+
+                outputs['x'].append(output['x'])
+                outputs['y'].append(output['y'])
+                outputs['p'].append(output['p'])
+                targets['x'] = target['x']
+                targets['y'] = target['y']
+
+            outputs['x'] = outputs['x'][0]
+            outputs['yMean'] = np.mean(outputs['y'], axis=0)
+            outputs['pMean'] = np.mean(outputs['p'], axis=0)
+
+            self.simResults['outputs'].append(outputs)
+            self.simResults['targets'].append(targets)
+
+            plt.figure()
+            plt.plot(outputs['x'], outputs['yMean'])
+            plt.plot(outputs['x'], outputs['pMean'])
+            plt.plot(targets['x'], targets['y'], 'ro')
+            plt.savefig(self.path + '{}_GP_sim_fold_{}'.format(participantId, k))
+
 
     def formatPosterior(self, val):
         if val == self.decisionBoundary:
